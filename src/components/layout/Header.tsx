@@ -81,7 +81,12 @@ export function Header({ cartCount }: HeaderProps) {
             )}
           </Link>
 
-          <Link to="/login" className={cn(buttonVariants({ size: 'brand-md' }), 'w-[100px]')}>
+          <Link
+            to="."
+            search={(prev) => ({ ...prev, auth: 'entrar' })}
+            resetScroll={false}
+            className={cn(buttonVariants({ size: 'brand-md' }), 'w-[100px]')}
+          >
             <img src={logoutIcon} alt="" width={18} height={17} />
             Entrar
           </Link>

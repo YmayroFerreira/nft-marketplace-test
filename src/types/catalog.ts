@@ -10,7 +10,11 @@ export interface Nft {
   previousPrice?: number
   collectionId: string
   network: Network
+  /** Rare NFTs show the "RARO" badge */
+  rarity?: NftRarity
 }
+
+export type NftRarity = 'common' | 'rare'
 
 export interface CollectionFacet {
   id: string

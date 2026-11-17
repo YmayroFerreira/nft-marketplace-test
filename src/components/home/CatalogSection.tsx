@@ -22,6 +22,9 @@ interface CatalogSectionProps {
   onTabChange: (tab: CatalogTab) => void
   onSortChange: (sort: CatalogSort) => void
   onPageChange: (page: number) => void
+  favoriteIds?: ReadonlySet<string>
+  onAddToCart?: (nft: Nft) => void
+  onToggleFavorite?: (nft: Nft) => void
 }
 
 export function CatalogSection({
@@ -39,6 +42,9 @@ export function CatalogSection({
   onTabChange,
   onSortChange,
   onPageChange,
+  favoriteIds,
+  onAddToCart,
+  onToggleFavorite,
 }: CatalogSectionProps) {
   return (
     <section
@@ -77,7 +83,12 @@ export function CatalogSection({
                 ))
               : nfts.map((nft) => (
                   <li key={nft.id}>
-                    <NftCard nft={nft} />
+                    <NftCard
+                      nft={nft}
+                      isFavorite={favoriteIds?.has(nft.id)}
+                      onAddToCart={onAddToCart}
+                      onToggleFavorite={onToggleFavorite}
+                    />
                   </li>
                 ))}
           </ul>

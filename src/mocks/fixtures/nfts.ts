@@ -3,7 +3,7 @@ import type { CatalogFacets, Nft } from '@/types/catalog'
 export const nfts: Nft[] = [
   { id: 'emerald-ape-042', name: 'Emerald Ape #042', imageUrl: '/nfts/emerald-ape.png', price: 1.19, collectionId: 'digital-art', network: 'ethereum' },
   { id: 'sage-nomad-009', name: 'Sage Nomad #009', imageUrl: '/nfts/sage-nomad.png', price: 1.69, collectionId: 'digital-art', network: 'ethereum' },
-  { id: 'neon-vessel-552', name: 'Neon Vessel #552', imageUrl: '/nfts/neon-vessel.png', price: 1.99, previousPrice: 2.29, collectionId: 'collectibles', network: 'polygon' },
+  { id: 'neon-vessel-552', name: 'Neon Vessel #552', imageUrl: '/nfts/neon-vessel.png', price: 1.99, previousPrice: 2.29, collectionId: 'collectibles', network: 'polygon', rarity: 'rare' },
   { id: 'cosmic-bloom-118', name: 'Cosmic Bloom #118', imageUrl: '/nfts/sage-nomad.png', price: 1.29, collectionId: 'generative', network: 'solana' },
   { id: 'violet-nomad-314', name: 'Violet Nomad #314', imageUrl: '/nfts/sage-nomad.png', price: 1.39, collectionId: 'digital-art', network: 'ethereum' },
   { id: 'ivory-baron-088', name: 'Ivory Baron #088', imageUrl: '/nfts/neon-vessel.png', price: 1.79, collectionId: 'photography', network: 'polygon' },

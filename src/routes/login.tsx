@@ -1,13 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+/** Sign in is a dialog over the home page; /login is kept as a shortcut to it */
 export const Route = createFileRoute('/login')({
-  component: LoginPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/', search: { auth: 'entrar' }, replace: true })
+  },
 })
-
-function LoginPage() {
-  return (
-    <section className="container-page py-10">
-      <h1 className="text-2xl font-bold">Entrar</h1>
-    </section>
-  )
-}

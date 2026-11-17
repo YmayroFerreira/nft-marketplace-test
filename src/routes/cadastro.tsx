@@ -1,13 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+/** Sign up is a dialog over the home page; /cadastro is kept as a shortcut to it */
 export const Route = createFileRoute('/cadastro')({
-  component: SignUpPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/', search: { auth: 'criar-conta' }, replace: true })
+  },
 })
-
-function SignUpPage() {
-  return (
-    <section className="container-page py-10">
-      <h1 className="text-2xl font-bold">Cadastro</h1>
-    </section>
-  )
-}

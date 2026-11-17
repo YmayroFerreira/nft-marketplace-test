@@ -4,6 +4,7 @@ import { CatalogSection } from '@/components/home/CatalogSection'
 import type { CatalogFilters } from '@/components/home/FiltersSidebar'
 import { Hero } from '@/components/home/Hero'
 import { PromoSection } from '@/components/home/PromoSection'
+import { useAuth } from '@/features/auth/auth-context'
 import type { CatalogSort, CatalogTab, Network } from '@/types/catalog'
 // TEMPORARY: static fixtures until the MSW handlers + TanStack Query hooks exist.
 // Once they do, these imports are replaced by useQuery calls and the fixtures
@@ -60,6 +61,7 @@ const CATALOG_ID = 'catalogo'
 function HomePage() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const { requireAuth } = useAuth()
 
   const filters: CatalogFilters = {
     collections: search.collections ?? [],
@@ -108,6 +110,11 @@ function HomePage() {
         onTabChange={(tab) => updateSearch({ tab: tab === 'all' ? undefined : tab })}
         onSortChange={(sort) => updateSearch({ sort: sort === 'recent' ? undefined : sort })}
         onPageChange={(page) => updateSearch({ page: page > 1 ? page : undefined }, true)}
+        // Both actions need a session: without one, the auth dialog opens and the
+        // action runs after sign-in.
+        // TODO: call the cart / favorites mutations (optimistic update with rollback)
+        onAddToCart={() => requireAuth(() => {})}
+        onToggleFavorite={() => requireAuth(() => {})}
       />
 
       <PromoSection promos={promos} />
