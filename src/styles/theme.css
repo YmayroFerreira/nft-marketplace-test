@@ -1,0 +1,119 @@
+/*
+ * Kurio design tokens, taken from the Figma variables
+ * ("Marketplace de NFTs GreenMint" file).
+ *
+ * The app has a single dark theme. Brand tokens are defined first;
+ * the shadcn/ui tokens below are mapped onto them so shadcn components
+ * pick up the Kurio look automatically.
+ */
+
+:root {
+  /* Brand palette (Figma: color/*) */
+  --kurio-ink: #140d0a; /* page background */
+  --kurio-surface-card: #241612; /* cards, sidebar, panels */
+  --kurio-surface-dark: #38220f; /* footer contact strip, highlighted rows */
+  --kurio-border: #3f2319;
+  --kurio-border-soft: #55321f;
+  --kurio-primary: #d28a4c; /* buttons, active nav, badges */
+  --kurio-secondary: #b39463;
+  --kurio-text-primary: #f7f3ec;
+  --kurio-foreground: #f5f1eb;
+  --kurio-text-secondary: #cfb28c; /* body copy, muted labels */
+  --kurio-text-accent: #e89b55; /* prices, links, highlights */
+  --kurio-background-elevated: #fbfbfb; /* light surfaces behind NFT art */
+
+  /* shadcn/ui tokens mapped to the brand palette */
+  --background: var(--kurio-ink);
+  --foreground: var(--kurio-foreground);
+  --card: var(--kurio-surface-card);
+  --card-foreground: var(--kurio-foreground);
+  --popover: var(--kurio-surface-card);
+  --popover-foreground: var(--kurio-foreground);
+  --primary: var(--kurio-primary);
+  --primary-foreground: var(--kurio-ink);
+  --secondary: var(--kurio-surface-dark);
+  --secondary-foreground: var(--kurio-text-primary);
+  --muted: var(--kurio-surface-card);
+  --muted-foreground: var(--kurio-text-secondary);
+  --accent: var(--kurio-surface-dark);
+  --accent-foreground: var(--kurio-text-accent);
+  --destructive: #e5484d;
+  --border: var(--kurio-border);
+  --input: var(--kurio-border-soft);
+  --ring: var(--kurio-text-accent);
+  --radius: 0.5rem;
+
+  /* Skeleton shimmer */
+  --skeleton-base: var(--kurio-surface-card);
+  --skeleton-highlight: var(--kurio-border-soft);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  /* Brand colors as Tailwind utilities: bg-ink, text-accent-text, border-soft... */
+  --color-ink: var(--kurio-ink);
+  --color-surface-card: var(--kurio-surface-card);
+  --color-surface-dark: var(--kurio-surface-dark);
+  --color-border-soft: var(--kurio-border-soft);
+  --color-brand-secondary: var(--kurio-secondary);
+  --color-text-primary: var(--kurio-text-primary);
+  --color-text-secondary: var(--kurio-text-secondary);
+  --color-text-accent: var(--kurio-text-accent);
+  --color-elevated: var(--kurio-background-elevated);
+
+  /* Typography (Figma: font/family = Roboto Mono) */
+  --font-sans: 'Roboto Mono Variable', ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+
+  /* Figma text styles that don't match Tailwind's default scale */
+  --text-tiny: 0.625rem; /* 10px — Tiny/10 */
+  --text-tiny--line-height: 1;
+  --text-caption: 0.8125rem; /* 13px — Caption/13 */
+  --text-caption--line-height: 1.375rem;
+  --text-display: 2.6875rem; /* 43px — Display/43 */
+  --text-display--line-height: 4.375rem;
+
+  /* Layout */
+  --container-page: 75rem; /* 1200px content width in the Figma frames */
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: var(--container-page);
+  margin-inline: auto;
+  padding-inline: 1rem;
+
+  @media (width >= 48rem) {
+    padding-inline: 1.5rem;
+  }
+
+  @media (width >= 80rem) {
+    padding-inline: 0;
+  }
+}
+
+@utility skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-highlight) 50%,
+    var(--skeleton-base) 75%
+  );
+  background-size: 200% 100%;
+  animation: kurio-shimmer 1.4s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background: var(--skeleton-base);
+  }
+}
+
+@keyframes kurio-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
