@@ -50,6 +50,7 @@ export const authApi = {
   signUp: (body: SignUpRequest) => api.post<AuthResponse>('/auth/sign-up', body).then((r) => r.data),
   social: (provider: SocialProvider) => api.post<AuthResponse>('/auth/social', { provider }).then((r) => r.data),
   signOut: () => api.post('/auth/sign-out').then(() => undefined),
+  requestPasswordReset: (email: string) => api.post('/auth/password-reset', { email }).then(() => undefined),
   session: () => api.get<{ user: User }>('/auth/session').then((r) => r.data.user),
 }
 

@@ -98,6 +98,22 @@ export const authHandlers = [
     return authResponse(user)
   }),
 
+  /**
+   * Password reset request. Always answers 202 for a valid e-mail, whether an
+   * account exists or not, so the endpoint cannot be used to find accounts.
+   */
+  http.post(`${API}/auth/password-reset`, async ({ request }) => {
+    const failure = await simulateNetwork()
+    if (failure) return failure
+
+    const body = await readJson<{ email: string }>(request)
+    const email = body?.email?.trim() ?? ''
+    if (!EMAIL_PATTERN.test(email)) {
+      return apiError(422, 'validation_error', 'Informe um e-mail válido.', { email: 'Informe um e-mail válido.' })
+    }
+    return HttpResponse.json({ sent: true }, { status: 202 })
+  }),
+
   http.post(`${API}/auth/sign-out`, async ({ request }) => {
     const failure = await simulateNetwork()
     if (failure) return failure

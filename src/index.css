@@ -38,6 +38,13 @@
   }
   html {
     @apply font-sans antialiased;
+    /* Keeps focused/scrolled-to elements clear of the fixed mobile tab bar */
+    scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+  @media (width >= 48rem) {
+    html {
+      scroll-padding-bottom: 0;
+    }
   }
   body {
     @apply bg-background text-foreground min-h-dvh;

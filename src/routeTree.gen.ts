@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as CarteirasRouteImport } from './routes/carteiras'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as PerfilRouteImport } from './routes/perfil'
@@ -37,6 +38,11 @@ const CarrinhoRoute = CarrinhoRouteImport.update({
 const CarteirasRoute = CarteirasRouteImport.update({
   id: '/carteiras',
   path: '/carteiras',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/carteiras': typeof CarteirasRoute
+  '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
   '/pagamento': typeof PagamentoRoute
   '/perfil': typeof PerfilRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/carteiras': typeof CarteirasRoute
+  '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
   '/pagamento': typeof PagamentoRoute
   '/perfil': typeof PerfilRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/carteiras': typeof CarteirasRoute
+  '/favoritos': typeof FavoritosRoute
   '/login': typeof LoginRoute
   '/pagamento': typeof PagamentoRoute
   '/perfil': typeof PerfilRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/carteiras'
+    | '/favoritos'
     | '/login'
     | '/pagamento'
     | '/perfil'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/carteiras'
+    | '/favoritos'
     | '/login'
     | '/pagamento'
     | '/perfil'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/carteiras'
+    | '/favoritos'
     | '/login'
     | '/pagamento'
     | '/perfil'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   CadastroRoute: typeof CadastroRoute
   CarrinhoRoute: typeof CarrinhoRoute
   CarteirasRoute: typeof CarteirasRoute
+  FavoritosRoute: typeof FavoritosRoute
   LoginRoute: typeof LoginRoute
   PagamentoRoute: typeof PagamentoRoute
   PerfilRoute: typeof PerfilRoute
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/carteiras'
       fullPath: '/carteiras'
       preLoaderRoute: typeof CarteirasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroRoute: CadastroRoute,
   CarrinhoRoute: CarrinhoRoute,
   CarteirasRoute: CarteirasRoute,
+  FavoritosRoute: FavoritosRoute,
   LoginRoute: LoginRoute,
   PagamentoRoute: PagamentoRoute,
   PerfilRoute: PerfilRoute,

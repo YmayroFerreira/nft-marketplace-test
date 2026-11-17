@@ -31,7 +31,7 @@ const FEATURES = [
 interface FooterLink {
   label: string
   /** Links without a page yet are rendered as plain text */
-  to?: '/perfil' | '/carteiras'
+  to?: '/perfil' | '/carteiras' | '/favoritos'
 }
 
 const LINK_COLUMNS: { title: string; links: FooterLink[] }[] = [
@@ -42,7 +42,7 @@ const LINK_COLUMNS: { title: string; links: FooterLink[] }[] = [
       { label: 'Minha coleção' },
       { label: 'Atividade' },
       { label: 'Estúdio do criador' },
-      { label: 'Lista de interesse' },
+      { label: 'Lista de interesse', to: '/favoritos' },
     ],
   },
   {

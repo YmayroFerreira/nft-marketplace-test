@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react'
 import { Link } from '@tanstack/react-router'
-import { useAuth } from '@/features/auth/auth-context'
 import homeIcon from '@/assets/icons/tab-home.svg'
 import heartIcon from '@/assets/icons/tab-heart.svg'
 import cartIcon from '@/assets/icons/tab-cart.svg'
@@ -35,8 +34,6 @@ interface MobileTabBarProps {
 
 /** Bottom navigation on mobile (the desktop header takes this role on md+) */
 export function MobileTabBar({ cartCount }: MobileTabBarProps) {
-  const { requireAuth } = useAuth()
-
   return (
     <nav
       aria-label="Navegação principal"
@@ -49,10 +46,9 @@ export function MobileTabBar({ cartCount }: MobileTabBarProps) {
           </Link>
         </li>
         <li>
-          {/* TODO: favorites page once the API exists; it needs a session */}
-          <button type="button" aria-label="Favoritos" onClick={() => requireAuth(() => {})} className={itemClass}>
+          <Link to="/favoritos" aria-label="Favoritos" className={itemClass}>
             <TabIcon src={heartIcon} height={18} />
-          </button>
+          </Link>
         </li>
         <li>
           <Link

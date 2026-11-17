@@ -108,7 +108,10 @@ export function useToggleFavorite() {
       return { previous }
     },
     onError: (error, _variables, context) => {
-      queryClient.setQueryData(key, context?.previous)
+      // setQueryData(undefined) is a no-op, so when the list had not loaded yet
+      // the rollback restores an empty list; the refetch then brings the real one
+      queryClient.setQueryData<Favorites>(key, context?.previous ?? { nftIds: [], items: [] })
+      void queryClient.invalidateQueries({ queryKey: key })
       toast.error(`${errorMessage(error)} A alteração foi desfeita.`)
     },
     onSuccess: (favorites) => queryClient.setQueryData(key, favorites),

@@ -25,8 +25,15 @@ Pendências e decisões para revisar antes da entrega.
 
 - [ ] Ajuste fino visual de Detalhe, Carrinho, Pagamento, Confirmação, Perfil e Carteiras com o Figma quando a cota do MCP renovar (foram feitas com o print do Detalhe e os textos extraídos das telas).
 - [ ] Layout mobile dessas telas conforme os frames mobile do Figma.
-- [ ] Página de favoritos: o botão "Favoritos" da barra inferior mobile ainda não leva a uma tela.
-- [ ] "Esqueceu a senha?" sem fluxo.
+- [x] Página de favoritos (`/favoritos`), ligada à barra mobile e ao rodapé.
+- [x] "Esqueceu a senha?" com endpoint `POST /api/auth/password-reset`.
+- [x] Skeleton com shimmer no resumo do carrinho.
+
+## Testes
+
+- [x] Playwright: E2E (catálogo, auth, compra, favoritos, perfil, carteiras, acessibilidade) em Chromium desktop e mobile, relatório HTML, traces/vídeos em falhas.
+- [x] Regressão visual com baselines versionadas em `e2e/__screenshots__` (cenário `stable`).
+- [ ] Rodar os testes num CI (GitHub Actions) para provar que passam num checkout limpo.
 
 ## Desvios do Figma para documentar no `ARCHITECTURE.md`
 

@@ -80,7 +80,14 @@ export function AuthDialog() {
       setStatus(error instanceof ApiError ? error.message : 'Não foi possível entrar. Tente novamente.')
     },
   })
-  const isSubmitting = authMutation.isPending
+  const passwordReset = useMutation({
+    mutationFn: authApi.requestPasswordReset,
+    onMutate: () => setStatus(null),
+    onSuccess: (_data, email) =>
+      toast.success(`Se houver uma conta para ${email}, enviamos um link para redefinir a senha.`),
+    onError: (error) => setStatus(error instanceof ApiError ? error.message : 'Não foi possível enviar o link.'),
+  })
+  const isSubmitting = authMutation.isPending || passwordReset.isPending
 
   return (
     <Dialog open={auth !== undefined} onOpenChange={(open) => !open && setTab(undefined)}>
@@ -143,6 +150,7 @@ export function AuthDialog() {
               isSubmitting={isSubmitting}
               serverErrors={fieldErrors}
               onSubmit={(values) => authMutation.mutate({ kind: 'sign-in', values })}
+              onForgotPassword={(email) => passwordReset.mutate(email)}
             />
           ) : (
             <SignUpForm

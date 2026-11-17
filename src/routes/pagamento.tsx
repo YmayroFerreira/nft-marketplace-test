@@ -77,7 +77,7 @@ function CheckoutForm({ cart, wallets }: { cart: Cart; wallets: Wallet[] }) {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-      <section aria-labelledby="wallets-title" className="flex flex-col gap-4">
+      <section aria-labelledby="wallets-title" className="flex min-w-0 flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <h2 id="wallets-title" className="text-lg font-bold text-foreground">
             Carteira conectada
@@ -95,7 +95,8 @@ function CheckoutForm({ cart, wallets }: { cart: Cart; wallets: Wallet[] }) {
             </Link>
           </div>
         ) : (
-          <fieldset className="flex flex-col gap-3">
+          <fieldset className="flex min-w-0 flex-col gap-3">
+            {/* min-w-0: fieldsets default to min-width: min-content and would overflow */}
             <legend className="sr-only">Escolha a carteira de pagamento</legend>
             {wallets.map((wallet) => (
               <label

@@ -34,7 +34,7 @@ function CartPage() {
 function CartContent() {
   const cart = useCart()
 
-  if (cart.isPending) return <div className="skeleton-shimmer h-80 rounded-lg" aria-busy />
+  if (cart.isPending) return <CartSkeleton />
   if (cart.isError) return <ErrorState message={cart.error.message} onRetry={() => void cart.refetch()} />
 
   if (cart.data.items.length === 0) {
@@ -65,7 +65,7 @@ function CartItems({ cart }: { cart: Cart }) {
   const isUpdating = setItem.isPending || removeItem.isPending
 
   return (
-    <section aria-label="Itens do carrinho">
+    <section aria-label="Itens do carrinho" className="min-w-0">
       <table className="w-full border-collapse text-left">
         <caption className="sr-only">NFTs no carrinho</caption>
         <thead className="hidden border-b border-border text-sm text-foreground md:table-header-group">
@@ -193,6 +193,37 @@ function CartSummary({ cart }: { cart: Cart }) {
         </Link>
       </div>
     </aside>
+  )
+}
+
+/** Shimmer placeholders for the cart items and the summary (required by the challenge) */
+function CartSkeleton() {
+  return (
+    <div className="grid gap-8 lg:grid-cols-[1fr_340px]" aria-busy aria-label="Carregando carrinho">
+      <div className="flex flex-col">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div key={i} className="flex items-center gap-4 border-b border-border py-4" aria-hidden>
+            <div className="skeleton-shimmer size-[70px] shrink-0 rounded-lg" />
+            <div className="flex flex-1 flex-col gap-2">
+              <div className="skeleton-shimmer h-4 w-1/2 rounded" />
+              <div className="skeleton-shimmer h-3 w-1/4 rounded" />
+            </div>
+            <div className="skeleton-shimmer hidden h-6 w-24 rounded md:block" />
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-4 rounded-lg bg-surface-card p-6" aria-hidden>
+        <div className="skeleton-shimmer h-5 w-2/3 rounded" />
+        <div className="skeleton-shimmer h-10 rounded" />
+        {Array.from({ length: 4 }, (_, i) => (
+          <div key={i} className="flex justify-between">
+            <div className="skeleton-shimmer h-4 w-1/3 rounded" />
+            <div className="skeleton-shimmer h-4 w-1/4 rounded" />
+          </div>
+        ))}
+        <div className="skeleton-shimmer h-10 rounded" />
+      </div>
+    </div>
   )
 }
 

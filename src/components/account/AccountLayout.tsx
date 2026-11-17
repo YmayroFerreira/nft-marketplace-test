@@ -18,7 +18,9 @@ export function AccountLayout({ title, children }: { title: string; children: Re
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
+    // minmax(0, 1fr): grid columns default to min-content and long wallet
+    // addresses would push the page wider than the screen
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="flex h-fit flex-col gap-4 rounded-lg bg-surface-card p-5">
         <p className="text-lg font-bold text-foreground">Meu perfil</p>
         <nav aria-label="Minha conta">
