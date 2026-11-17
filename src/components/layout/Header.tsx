@@ -20,9 +20,11 @@ const NAV_ITEMS: NavItem[] = [
 
 interface HeaderProps {
   cartCount: number
+  /** Name of the signed-in user; the sign-in button becomes a profile link */
+  userName?: string
 }
 
-export function Header({ cartCount }: HeaderProps) {
+export function Header({ cartCount, userName }: HeaderProps) {
   return (
     // On mobile the bottom tab bar and the page's own top bar replace the header
     <header className="container-page hidden pt-6 md:block">
@@ -82,15 +84,25 @@ export function Header({ cartCount }: HeaderProps) {
             )}
           </Link>
 
-          <Link
-            to="."
-            search={(prev) => ({ ...prev, auth: 'entrar' })}
-            resetScroll={false}
-            className={cn(buttonVariants({ size: 'brand-md' }), 'w-[100px]')}
-          >
-            <img src={logoutIcon} alt="" width={18} height={17} />
-            Entrar
-          </Link>
+          {userName ? (
+            <Link
+              to="/perfil"
+              className={cn(buttonVariants({ size: 'brand-md' }), 'max-w-[180px]')}
+              aria-label={`Meu perfil, ${userName}`}
+            >
+              <span className="truncate">{userName.split(' ')[0]}</span>
+            </Link>
+          ) : (
+            <Link
+              to="."
+              search={(prev) => ({ ...prev, auth: 'entrar' })}
+              resetScroll={false}
+              className={cn(buttonVariants({ size: 'brand-md' }), 'w-[100px]')}
+            >
+              <img src={logoutIcon} alt="" width={18} height={17} />
+              Entrar
+            </Link>
+          )}
         </div>
       </div>
     </header>

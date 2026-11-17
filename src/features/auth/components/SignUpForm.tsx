@@ -7,13 +7,20 @@ import { hasErrors, validateSignUp, type FieldErrors, type SignUpValues } from '
 interface SignUpFormProps {
   onSubmit: (values: SignUpValues) => void
   isSubmitting?: boolean
+  /** Field errors returned by the API */
+  serverErrors?: Record<string, string>
 }
 
 const EMPTY: SignUpValues = { username: '', email: '', password: '', confirmPassword: '' }
 
-export function SignUpForm({ onSubmit, isSubmitting = false }: SignUpFormProps) {
+export function SignUpForm({ onSubmit, isSubmitting = false, serverErrors }: SignUpFormProps) {
   const [values, setValues] = useState<SignUpValues>(EMPTY)
-  const [errors, setErrors] = useState<FieldErrors<SignUpValues>>({})
+  const [clientErrors, setErrors] = useState<FieldErrors<SignUpValues>>({})
+  // Client errors win; fields that passed client validation can still show server errors
+  const errors = {
+    ...serverErrors,
+    ...Object.fromEntries(Object.entries(clientErrors).filter(([, message]) => message)),
+  } as FieldErrors<SignUpValues>
 
   function update(field: keyof SignUpValues, value: string) {
     setValues((v) => ({ ...v, [field]: value }))

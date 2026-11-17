@@ -1,5 +1,9 @@
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { toast } from 'sonner'
+import { ApiError } from '@/api/client'
+import { contentApi } from '@/api/endpoints'
 import facebookIcon from '@/assets/icons/facebook.svg'
 import instagramIcon from '@/assets/icons/instagram.svg'
 import twitterIcon from '@/assets/icons/twitter.svg'
@@ -72,9 +76,19 @@ const SOCIALS = [
 ]
 
 export function Footer() {
+  const [email, setEmail] = useState('')
+  const subscribe = useMutation({
+    mutationFn: contentApi.subscribeNewsletter,
+    onSuccess: () => {
+      setEmail('')
+      toast.success('Inscrição confirmada! Você vai receber os próximos lançamentos.')
+    },
+    onError: (error) => toast.error(error instanceof ApiError ? error.message : 'Não foi possível inscrever.'),
+  })
+
   function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    // TODO: send to the newsletter endpoint once the API exists
+    subscribe.mutate(email)
   }
 
   return (
@@ -117,13 +131,16 @@ export function Footer() {
               required
               autoComplete="email"
               placeholder="digite seu e-mail..."
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground placeholder:text-brand-secondary focus-visible:-outline-offset-2"
             />
             <button
               type="submit"
-              className="w-[85px] bg-primary text-lg font-bold text-primary-foreground hover:bg-primary/85"
+              disabled={subscribe.isPending}
+              className="w-[85px] bg-primary text-lg font-bold text-primary-foreground hover:bg-primary/85 disabled:opacity-60"
             >
-              Enviar
+              {subscribe.isPending ? '…' : 'Enviar'}
             </button>
           </form>
           <p className="text-caption text-text-secondary">

@@ -6,13 +6,10 @@ import { CatalogSection } from '@/components/home/CatalogSection'
 import type { CatalogFilters } from '@/components/home/FiltersSidebar'
 import { Hero } from '@/components/home/Hero'
 import { PromoSection } from '@/components/home/PromoSection'
-import { useAuth } from '@/features/auth/auth-context'
-import type { CatalogSort, CatalogTab, Network } from '@/types/catalog'
-// TEMPORARY: static fixtures until the MSW handlers + TanStack Query hooks exist.
-// Once they do, these imports are replaced by useQuery calls and the fixtures
-// are only read by the mock handlers.
-import { blogPosts, promos } from '@/mocks/fixtures/content'
-import { catalogFacets, featuredNft, nfts } from '@/mocks/fixtures/nfts'
+import { useNftCardActions } from '@/features/catalog/useNftCardActions'
+import { useQuery } from '@tanstack/react-query'
+import { catalogQueries, contentQueries } from '@/features/catalog/queries'
+import type { CatalogQuery, CatalogSort, CatalogTab, Network } from '@/types/catalog'
 
 const TABS: CatalogTab[] = ['all', 'new', 'trending']
 const SORTS: CatalogSort[] = ['recent', 'price-asc', 'price-desc']
@@ -66,7 +63,6 @@ const CATALOG_ID = 'catalogo'
 function HomePage() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
-  const { requireAuth } = useAuth()
   const [isFiltersDrawerOpen, setFiltersDrawerOpen] = useState(false)
 
   const filters: CatalogFilters = {
@@ -77,6 +73,23 @@ function HomePage() {
         ? { min: search.minPrice, max: search.maxPrice }
         : undefined,
   }
+
+  const catalogQuery: CatalogQuery = {
+    page: search.page,
+    tab: search.tab,
+    sort: search.sort,
+    collections: search.collections,
+    networks: search.networks,
+    minPrice: search.minPrice,
+    maxPrice: search.maxPrice,
+    q: search.q,
+  }
+  const catalog = useQuery(catalogQueries.list(catalogQuery))
+  const facets = useQuery(catalogQueries.facets())
+  const featured = useQuery(catalogQueries.featured())
+  const promos = useQuery(contentQueries.promos())
+  const blogPosts = useQuery(contentQueries.blogPosts())
+  const cardActions = useNftCardActions()
 
   /** Updates the URL; any filter change goes back to page 1 */
   function updateSearch(next: Partial<HomeSearch>, keepPage = false) {
@@ -109,14 +122,27 @@ function HomePage() {
 
       <CatalogSection
         id={CATALOG_ID}
-        nfts={nfts}
-        featuredNft={featuredNft}
-        facets={catalogFacets}
+        nfts={catalog.data?.items ?? []}
+        isLoading={catalog.isPending}
+        errorMessage={catalog.isError ? catalog.error.message : undefined}
+        onRetry={() => void catalog.refetch()}
+        featuredNft={featured.data}
+        facets={facets.data}
         filters={filters}
         tab={search.tab ?? 'all'}
         sort={search.sort ?? 'recent'}
         page={search.page ?? 1}
-        totalPages={4}
+        totalPages={catalog.data?.totalPages ?? 1}
+        onClearFilters={() =>
+          updateSearch({
+            collections: undefined,
+            networks: undefined,
+            minPrice: undefined,
+            maxPrice: undefined,
+            q: undefined,
+            tab: undefined,
+          })
+        }
         onFiltersChange={(next) =>
           updateSearch({
             collections: next.collections.length ? next.collections : undefined,
@@ -129,16 +155,16 @@ function HomePage() {
         onSortChange={(sort) => updateSearch({ sort: sort === 'recent' ? undefined : sort })}
         onPageChange={(page) => updateSearch({ page: page > 1 ? page : undefined }, true)}
         // Both actions need a session: without one, the auth dialog opens and the
-        // action runs after sign-in.
-        // TODO: call the cart / favorites mutations (optimistic update with rollback)
-        onAddToCart={() => requireAuth(() => {})}
-        onToggleFavorite={() => requireAuth(() => {})}
+        // action runs after sign-in
+        favoriteIds={cardActions.favoriteIds}
+        onAddToCart={cardActions.onAddToCart}
+        onToggleFavorite={cardActions.onToggleFavorite}
         isFiltersDrawerOpen={isFiltersDrawerOpen}
         onFiltersDrawerOpenChange={setFiltersDrawerOpen}
       />
 
-      <PromoSection promos={promos} />
-      <BlogSection posts={blogPosts} />
+      {promos.data && <PromoSection promos={promos.data} />}
+      {blogPosts.data && <BlogSection posts={blogPosts.data} />}
     </>
   )
 }

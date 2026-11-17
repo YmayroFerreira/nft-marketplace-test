@@ -7,11 +7,18 @@ import { hasErrors, validateSignIn, type FieldErrors, type SignInValues } from '
 interface SignInFormProps {
   onSubmit: (values: SignInValues) => void
   isSubmitting?: boolean
+  /** Field errors returned by the API */
+  serverErrors?: Record<string, string>
 }
 
-export function SignInForm({ onSubmit, isSubmitting = false }: SignInFormProps) {
+export function SignInForm({ onSubmit, isSubmitting = false, serverErrors }: SignInFormProps) {
   const [values, setValues] = useState<SignInValues>({ email: '', password: '' })
-  const [errors, setErrors] = useState<FieldErrors<SignInValues>>({})
+  const [clientErrors, setErrors] = useState<FieldErrors<SignInValues>>({})
+  // Client errors win; fields that passed client validation can still show server errors
+  const errors = {
+    ...serverErrors,
+    ...Object.fromEntries(Object.entries(clientErrors).filter(([, message]) => message)),
+  } as FieldErrors<SignInValues>
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

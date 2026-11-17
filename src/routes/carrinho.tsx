@@ -1,4 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { useState, type FormEvent } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { Trash2 } from 'lucide-react'
+import { Breadcrumbs } from '@/components/common/Breadcrumbs'
+import { ErrorState } from '@/components/common/ErrorState'
+import { QuantityStepper } from '@/components/common/QuantityStepper'
+import { NftCard } from '@/components/nft/NftCard'
+import { buttonVariants } from '@/components/ui/button'
+import { useApplyPromo, useCart, useRemoveCartItem, useRemovePromo, useSetCartItem } from '@/features/account/hooks'
+import { RequireAuth } from '@/features/auth/RequireAuth'
+import { catalogQueries } from '@/features/catalog/queries'
+import { useNftCardActions } from '@/features/catalog/useNftCardActions'
+import { cn } from '@/lib/utils'
+import { formatEth, formatEthTotal } from '@/lib/format'
+import type { Cart } from '@/types/account'
 
 export const Route = createFileRoute('/carrinho')({
   component: CartPage,
@@ -6,8 +21,214 @@ export const Route = createFileRoute('/carrinho')({
 
 function CartPage() {
   return (
-    <section className="container-page py-10">
-      <h1 className="text-2xl font-bold">Carrinho</h1>
+    <div className="container-page mt-6 flex flex-col gap-6 md:mt-8">
+      <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Mercado' }, { label: 'Carrinho' }]} />
+      <h1 className="sr-only">Carrinho</h1>
+      <RequireAuth message="Entre para ver seu carrinho e finalizar a compra dos seus NFTs.">
+        <CartContent />
+      </RequireAuth>
+    </div>
+  )
+}
+
+function CartContent() {
+  const cart = useCart()
+
+  if (cart.isPending) return <div className="skeleton-shimmer h-80 rounded-lg" aria-busy />
+  if (cart.isError) return <ErrorState message={cart.error.message} onRetry={() => void cart.refetch()} />
+
+  if (cart.data.items.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-lg bg-surface-card px-6 py-16 text-center">
+        <p className="text-lg text-foreground">Seu carrinho está vazio.</p>
+        <Link to="/" className={buttonVariants({ size: 'brand-lg' })}>
+          Explorar NFTs
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+        <CartItems cart={cart.data} />
+        <CartSummary cart={cart.data} />
+      </div>
+      <Suggestions excludeIds={cart.data.items.map((item) => item.nftId)} />
+    </>
+  )
+}
+
+function CartItems({ cart }: { cart: Cart }) {
+  const setItem = useSetCartItem()
+  const removeItem = useRemoveCartItem()
+  const isUpdating = setItem.isPending || removeItem.isPending
+
+  return (
+    <section aria-label="Itens do carrinho">
+      <table className="w-full border-collapse text-left">
+        <caption className="sr-only">NFTs no carrinho</caption>
+        <thead className="hidden border-b border-border text-sm text-foreground md:table-header-group">
+          <tr>
+            <th scope="col" className="pb-3 font-bold">NFTs</th>
+            <th scope="col" className="pb-3 font-bold">Preço</th>
+            <th scope="col" className="pb-3 font-bold">Edições</th>
+            <th scope="col" className="pb-3 font-bold">Total</th>
+            <th scope="col" className="pb-3">
+              <span className="sr-only">Remover</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody aria-busy={isUpdating}>
+          {cart.items.map((item) => (
+            <tr
+              key={item.nftId}
+              className="grid grid-cols-[1fr_auto] gap-3 border-b border-border py-4 md:table-row md:py-0"
+            >
+              <td className="col-span-2 md:py-4">
+                <Link to="/nft/$nftId" params={{ nftId: item.nftId }} className="flex items-center gap-4">
+                  <img src={item.imageUrl} alt="" width={70} height={70} loading="lazy" className="size-[70px] rounded-lg object-cover" />
+                  <span className="flex flex-col gap-1">
+                    <span className="text-base text-foreground">{item.name}</span>
+                    <span className="text-xs text-text-secondary">ID do token: {item.tokenId}</span>
+                  </span>
+                </Link>
+              </td>
+              <td className="text-sm text-foreground md:py-4">
+                <span className="text-text-secondary md:hidden">Preço: </span>
+                {formatEth(item.unitPrice)}
+              </td>
+              <td className="row-start-3 md:py-4">
+                <QuantityStepper
+                  size="sm"
+                  label={`Edições de ${item.name}`}
+                  value={item.quantity}
+                  max={item.availableEditions}
+                  disabled={isUpdating}
+                  onChange={(quantity) =>
+                    setItem.mutate({ nftId: item.nftId, quantity, expectedVersion: cart.version })
+                  }
+                />
+              </td>
+              <td className="text-right text-base font-bold text-text-accent md:py-4 md:text-left">
+                {formatEthTotal(item.lineTotal)}
+              </td>
+              <td className="row-start-3 text-right md:py-4">
+                <button
+                  type="button"
+                  onClick={() => removeItem.mutate(item.nftId)}
+                  disabled={isUpdating}
+                  aria-label={`Remover ${item.name} do carrinho`}
+                  className="grid size-9 place-items-center rounded-md text-text-secondary hover:bg-accent hover:text-destructive disabled:opacity-40"
+                >
+                  <Trash2 className="size-5" aria-hidden />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   )
 }
+
+function CartSummary({ cart }: { cart: Cart }) {
+  const [code, setCode] = useState('')
+  const applyPromo = useApplyPromo()
+  const removePromo = useRemovePromo()
+
+  function handlePromo(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (code.trim()) applyPromo.mutate(code.trim(), { onSuccess: () => setCode('') })
+  }
+
+  return (
+    <aside aria-labelledby="summary-title" className="flex h-fit flex-col gap-5 rounded-lg bg-surface-card p-6">
+      <h2 id="summary-title" className="text-lg font-bold text-foreground">
+        Resumo da carteira
+      </h2>
+
+      <form onSubmit={handlePromo} className="flex flex-col gap-2">
+        <label htmlFor="promo-code" className="text-sm text-foreground">
+          Código promocional
+        </label>
+        {cart.promoCode ? (
+          <p className="flex items-center justify-between rounded-md border border-border-soft px-3 py-2 text-sm text-text-accent">
+            {cart.promoCode}
+            <button type="button" onClick={() => removePromo.mutate()} className="text-xs text-foreground underline">
+              Remover
+            </button>
+          </p>
+        ) : (
+          <div className="flex h-10 overflow-hidden rounded-md border border-border-soft">
+            <input
+              id="promo-code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Digite o código promocional..."
+              className="min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground placeholder:text-brand-secondary focus-visible:-outline-offset-2"
+            />
+            <button type="submit" disabled={applyPromo.isPending} className="bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60">
+              Aplicar
+            </button>
+          </div>
+        )}
+      </form>
+
+      <dl className="flex flex-col gap-3 text-sm text-foreground">
+        <SummaryRow label="Subtotal" value={formatEthTotal(cart.subtotal)} />
+        <SummaryRow label="Desconto do lançamento" value={`(-) ${formatEthTotal(cart.discount)}`} />
+        <SummaryRow label="Taxa de rede" value={formatEthTotal(cart.networkFee)} />
+        <div className="border-t border-border pt-3">
+          <SummaryRow label="Total estimado" value={formatEthTotal(cart.total)} emphasis />
+        </div>
+      </dl>
+
+      <div className="flex flex-col gap-3">
+        <Link to="/pagamento" className={cn(buttonVariants({ size: 'brand-lg' }), 'w-full')}>
+          Conectar e finalizar
+        </Link>
+        <Link to="/" className="text-center text-sm text-text-accent hover:underline">
+          Continuar explorando
+        </Link>
+      </div>
+    </aside>
+  )
+}
+
+function SummaryRow({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className={cn(emphasis && 'font-bold')}>{label}</dt>
+      <dd className={cn(emphasis ? 'text-base font-bold text-text-accent' : 'text-foreground')}>{value}</dd>
+    </div>
+  )
+}
+
+function Suggestions({ excludeIds }: { excludeIds: string[] }) {
+  const catalog = useQuery(catalogQueries.list({ pageSize: 9, tab: 'trending' }))
+  const actions = useNftCardActions()
+  const items = (catalog.data?.items ?? []).filter((nft) => !excludeIds.includes(nft.id)).slice(0, 3)
+  if (items.length === 0) return null
+
+  return (
+    <section aria-labelledby="suggestions-title" className="mt-10 flex flex-col gap-6">
+      <h2 id="suggestions-title" className="border-b border-border pb-2 text-lg font-bold text-text-accent">
+        Colecionadores também viram
+      </h2>
+      <ul className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        {items.map((nft) => (
+          <li key={nft.id}>
+            <NftCard
+              nft={nft}
+              isFavorite={actions.isFavorite(nft.id)}
+              onAddToCart={actions.onAddToCart}
+              onToggleFavorite={actions.onToggleFavorite}
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+

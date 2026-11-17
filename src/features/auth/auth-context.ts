@@ -1,23 +1,20 @@
 import { createContext, useContext } from 'react'
+import type { AuthResponse, User } from '@/types/account'
 import type { AuthTab } from './auth-search'
 
-export interface SessionUser {
-  id: string
-  username: string
-  email: string
-}
-
 export interface AuthContextValue {
-  user: SessionUser | null
+  user: User | null
+  /** True while a stored token is being validated with the API */
+  isLoadingSession: boolean
   /**
    * Runs `action` when there is a session. Otherwise opens the auth dialog and
    * runs `action` right after the user signs in.
    */
   requireAuth: (action: () => void) => void
   openAuthDialog: (tab?: AuthTab) => void
-  /** Called by the auth dialog after the API confirms the sign-in */
-  completeSignIn: (user: SessionUser) => void
-  signOut: () => void
+  /** Called by the auth dialog after the API confirms the sign-in or sign-up */
+  completeSignIn: (response: AuthResponse) => void
+  signOut: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
