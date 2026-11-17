@@ -7,7 +7,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default: "bg-primary text-primary-foreground hover:bg-primary/85",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
@@ -30,6 +30,10 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
+        /* Kurio sizes from the Figma */
+        "brand-sm": "h-9 gap-1 rounded-[6px] px-3 text-base font-bold",
+        "brand-md": "h-[35px] gap-1 rounded-[6px] px-4 text-base font-medium",
+        "brand-lg": "h-10 gap-2 rounded-[6px] px-7 text-base font-bold",
       },
     },
     defaultVariants: {
