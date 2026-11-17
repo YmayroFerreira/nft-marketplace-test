@@ -24,7 +24,8 @@ interface HeaderProps {
 
 export function Header({ cartCount }: HeaderProps) {
   return (
-    <header className="container-page pt-6">
+    // On mobile the bottom tab bar and the page's own top bar replace the header
+    <header className="container-page hidden pt-6 md:block">
       <div className="flex items-start justify-between border-b border-border">
         <Link
           to="/"

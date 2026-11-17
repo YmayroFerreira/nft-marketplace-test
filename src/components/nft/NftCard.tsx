@@ -4,6 +4,7 @@ import { formatEth } from '@/lib/format'
 import cartIcon from '@/assets/icons/cart-small.svg'
 import heartIcon from '@/assets/icons/heart.svg'
 import zoomIcon from '@/assets/icons/zoom.svg'
+import heartBadgeIcon from '@/assets/icons/heart-badge.svg'
 import type { Nft } from '@/types/catalog'
 
 interface NftCardProps {
@@ -18,8 +19,9 @@ const actionClass =
 
 export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite }: NftCardProps) {
   return (
-    <article className="group relative flex flex-col gap-3">
-      <div className="relative bg-surface-card px-1 py-6">
+    <article className="group relative flex flex-col gap-2 md:gap-3">
+      {/* Mobile: rounded gradient card from "Mobile / Início"; md+: flat desktop card */}
+      <div className="relative rounded-[20px] bg-[linear-gradient(140deg,#241612_12%,#2f1d15_107%)] px-1 pt-3 pb-5 md:rounded-none md:bg-none md:bg-surface-card md:py-6">
         <Link
           to="/nft/$nftId"
           params={{ nftId: nft.id }}
@@ -33,20 +35,37 @@ export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite
             height={250}
             loading="lazy"
             decoding="async"
-            className="aspect-square w-full rounded-[15px] object-cover"
+            className="aspect-square w-full rounded-2xl object-cover md:rounded-[15px]"
           />
         </Link>
 
         {nft.rarity === 'rare' && (
-          <span className="pointer-events-none absolute top-3.5 left-0 flex h-[29px] w-20 items-center bg-primary pl-[15px] text-caption leading-4 font-medium text-primary-foreground">
+          <span className="pointer-events-none absolute top-4 left-0 flex h-8 w-[68px] items-center bg-primary pl-2 text-caption leading-4 font-medium text-primary-foreground md:top-3.5 md:h-[29px] md:w-20 md:pl-[15px]">
             RARO
           </span>
         )}
 
-        {/* Hover actions from the design; always visible on touch screens */}
+        {/* Mobile: favorite badge on the artwork */}
+        <button
+          type="button"
+          onClick={() => onToggleFavorite?.(nft)}
+          aria-label={isFavorite ? `Remover ${nft.name} dos favoritos` : `Favoritar ${nft.name}`}
+          aria-pressed={isFavorite}
+          className="absolute top-5 right-3 rounded-full md:hidden"
+        >
+          <img
+            src={heartBadgeIcon}
+            alt=""
+            width={28}
+            height={28}
+            className={cn('transition-opacity', !isFavorite && 'opacity-70')}
+          />
+        </button>
+
+        {/* Desktop hover actions from the design; always visible on touch screens */}
         <div
           className={cn(
-            'absolute bottom-[7px] left-1/2 flex -translate-x-1/2 gap-2.5 transition-opacity',
+            'absolute bottom-[7px] left-1/2 hidden -translate-x-1/2 gap-2.5 transition-opacity md:flex',
             'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
             'motion-reduce:transition-none',
           )}
@@ -79,12 +98,12 @@ export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 leading-4">
-        <h3 className="text-base text-foreground">{nft.name}</h3>
-        <p className="flex items-center gap-3 text-lg">
+      <div className="flex flex-col gap-0.5 pl-2 leading-4 md:gap-1.5 md:pl-0">
+        <h3 className="text-[15px] leading-normal text-foreground md:text-base md:leading-4">{nft.name}</h3>
+        <p className="flex flex-wrap items-center gap-x-3 text-base font-bold md:text-lg md:font-normal">
           <span className="font-bold text-text-accent">{formatEth(nft.price)}</span>
           {nft.previousPrice !== undefined && (
-            <span className="text-brand-secondary line-through decoration-1">
+            <span className="font-normal text-brand-secondary line-through decoration-1">
               <span className="sr-only">Preço anterior: </span>
               {formatEth(nft.previousPrice)}
             </span>
@@ -98,8 +117,8 @@ export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite
 export function NftCardSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-hidden>
-      <div className="bg-surface-card px-1 py-6">
-        <div className="skeleton-shimmer aspect-square w-full rounded-[15px]" />
+      <div className="rounded-[20px] bg-surface-card px-1 pt-3 pb-5 md:rounded-none md:py-6">
+        <div className="skeleton-shimmer aspect-square w-full rounded-2xl md:rounded-[15px]" />
       </div>
       <div className="flex flex-col gap-1.5">
         <div className="skeleton-shimmer h-4 w-3/4 rounded" />

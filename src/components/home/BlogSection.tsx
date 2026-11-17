@@ -8,7 +8,7 @@ interface BlogSectionProps {
 
 export function BlogSection({ posts }: BlogSectionProps) {
   return (
-    <section aria-labelledby="blog-title" className="container-page mt-24 flex flex-col gap-10">
+    <section aria-labelledby="blog-title" className="container-page mt-16 flex flex-col gap-8 md:mt-24 md:gap-10">
       <SectionHeader
         id="blog-title"
         title="Diário da Cunhagem"

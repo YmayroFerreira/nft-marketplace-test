@@ -30,7 +30,11 @@ interface CatalogToolbarProps {
 export function CatalogToolbar({ tab, sort, onTabChange, onSortChange }: CatalogToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <div role="group" aria-label="Filtrar catálogo" className="flex flex-wrap gap-5">
+      <div
+        role="group"
+        aria-label="Filtrar catálogo"
+        className="-mx-1 flex gap-4 overflow-x-auto px-1 whitespace-nowrap md:mx-0 md:gap-5 md:overflow-visible md:px-0"
+      >
         {TABS.map((item) => {
           const isActive = item.value === tab
           return (
@@ -40,8 +44,10 @@ export function CatalogToolbar({ tab, sort, onTabChange, onSortChange }: Catalog
               aria-pressed={isActive}
               onClick={() => onTabChange(item.value)}
               className={cn(
-                'border-b-2 pb-1 text-[15px] leading-4 font-medium transition-colors hover:text-text-accent',
-                isActive ? 'border-text-accent text-text-accent' : 'border-transparent text-foreground',
+                'shrink-0 border-b-2 pb-1 text-sm leading-4 transition-colors hover:text-text-accent md:text-[15px] md:font-medium',
+                isActive
+                  ? 'border-text-accent font-bold text-text-accent'
+                  : 'border-transparent text-foreground',
               )}
             >
               {item.label}

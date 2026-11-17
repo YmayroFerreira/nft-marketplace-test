@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { MobileSearchBar } from '@/components/home/MobileSearchBar'
 import { BlogSection } from '@/components/home/BlogSection'
 import { CatalogSection } from '@/components/home/CatalogSection'
 import type { CatalogFilters } from '@/components/home/FiltersSidebar'
@@ -25,6 +27,8 @@ interface HomeSearch {
   networks?: Network[]
   minPrice?: number
   maxPrice?: number
+  /** Free-text search from the mobile search bar */
+  q?: string
 }
 
 function asStringArray(value: unknown): string[] | undefined {
@@ -51,6 +55,7 @@ export const Route = createFileRoute('/')({
       ),
       minPrice: asPositiveNumber(search.minPrice),
       maxPrice: asPositiveNumber(search.maxPrice),
+      q: typeof search.q === 'string' && search.q.trim() ? search.q.trim() : undefined,
     }
   },
   component: HomePage,
@@ -62,6 +67,7 @@ function HomePage() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const { requireAuth } = useAuth()
+  const [isFiltersDrawerOpen, setFiltersDrawerOpen] = useState(false)
 
   const filters: CatalogFilters = {
     collections: search.collections ?? [],
@@ -83,9 +89,21 @@ function HomePage() {
 
   return (
     <>
+      <MobileSearchBar
+        initialQuery={search.q}
+        onSearch={(q) => updateSearch({ q: q || undefined })}
+        onOpenFilters={() => setFiltersDrawerOpen(true)}
+      />
+
       <Hero
-        imageUrl="/nfts/emerald-ape.png"
-        imageAlt="Emerald Ape, macaco de óculos escuros e jaqueta verde"
+        image={{
+          src: '/nfts/emerald-ape.png',
+          alt: 'Emerald Ape, macaco de óculos escuros e jaqueta verde',
+        }}
+        secondaryImage={{
+          src: '/nfts/sage-nomad.png',
+          alt: 'Sage Nomad, gorila de chapéu e moletom roxo',
+        }}
         exploreTargetId={CATALOG_ID}
       />
 
@@ -115,6 +133,8 @@ function HomePage() {
         // TODO: call the cart / favorites mutations (optimistic update with rollback)
         onAddToCart={() => requireAuth(() => {})}
         onToggleFavorite={() => requireAuth(() => {})}
+        isFiltersDrawerOpen={isFiltersDrawerOpen}
+        onFiltersDrawerOpenChange={setFiltersDrawerOpen}
       />
 
       <PromoSection promos={promos} />

@@ -7,7 +7,7 @@ interface PromoSectionProps {
 
 export function PromoSection({ promos }: PromoSectionProps) {
   return (
-    <section aria-label="Destaques" className="container-page mt-24">
+    <section aria-label="Destaques" className="container-page mt-16 md:mt-24">
       <ul className="grid gap-7 md:grid-cols-2">
         {promos.map((promo) => (
           <li key={promo.id} className="h-full">

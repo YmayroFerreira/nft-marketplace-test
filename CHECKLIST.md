@@ -15,3 +15,6 @@ Pendências e decisões para revisar antes da entrega.
 ## Desvios do Figma para documentar no `ARCHITECTURE.md`
 
 - [ ] Modal de autenticação com fundo escurecido (o Figma não mostra scrim).
+- [ ] Mobile: barra de navegação inferior sem o recorte central e sem o botão de escanear (ver item acima).
+- [ ] Mobile: "Ordenar por", paginação, promoções, blog e footer mantidos abaixo da grade (o frame mobile não mostra), para não esconder conteúdo nem prejudicar SEO/acessibilidade.
+- [ ] Mobile: filtros abrem num painel lateral pelo botão ao lado da busca (o Figma não desenha esse painel).

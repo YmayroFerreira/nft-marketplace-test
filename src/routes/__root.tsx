@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
+import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { parseAuthTab, type AuthTab } from '@/features/auth/auth-search'
 import { AuthDialog } from '@/features/auth/components/AuthDialog'
@@ -25,7 +26,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   return (
     <AuthProvider>
-      <div className="flex min-h-dvh flex-col">
+      {/* Bottom padding on mobile keeps the content clear of the fixed tab bar */}
+      <div className="flex min-h-dvh flex-col pb-[calc(72px+env(safe-area-inset-bottom))] md:pb-0">
         <a
           href="#conteudo"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
@@ -39,6 +41,7 @@ function RootLayout() {
         </main>
         <Footer />
       </div>
+      <MobileTabBar cartCount={6} />
       <AuthDialog />
     </AuthProvider>
   )

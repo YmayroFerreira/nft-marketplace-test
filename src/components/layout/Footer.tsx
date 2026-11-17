@@ -78,7 +78,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="container-page mt-24">
+    <footer className="container-page mt-16 md:mt-24">
       {/* Features + newsletter */}
       <div className="grid gap-8 bg-surface-card p-8 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1.35fr] lg:gap-0">
         {FEATURES.map((feature) => (
