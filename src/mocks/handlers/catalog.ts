@@ -9,6 +9,7 @@ import type {
   NftReview,
   Paginated,
 } from '@/types/catalog'
+import { compareEth, isEthString, maxEth, minEth } from '@/lib/eth'
 import { getDb } from '../db'
 import { COLLECTIONS, createSeedReviews, FEATURED_NFT_ID, NETWORKS } from '../fixtures/nfts'
 import { API, apiError, simulateNetwork } from '../http-utils'
@@ -27,6 +28,7 @@ export function toListItem(nft: NftDetail): Nft {
     imageUrl: nft.imageUrl,
     price: nft.price,
     previousPrice: nft.previousPrice,
+    defaultEditionId: nft.defaultEditionId,
     collectionId: nft.collectionId,
     network: nft.network,
     rarity: nft.rarity,
@@ -62,6 +64,8 @@ export const catalogHandlers = [
 
     const nfts = catalogNfts()
     const prices = nfts.map((nft) => nft.price)
+    const minPrice = prices.length ? prices.reduce(minEth) : '0'
+    const maxPrice = prices.length ? prices.reduce(maxEth) : '0'
     const facets: CatalogFacets = {
       collections: COLLECTIONS.map((c) => ({
         id: c.id,
@@ -73,10 +77,7 @@ export const catalogHandlers = [
         name: n.name,
         count: nfts.filter((nft) => nft.network === n.id).length,
       })),
-      priceRange: {
-        min: prices.length ? Math.min(...prices) : 0,
-        max: prices.length ? Math.max(...prices) : 0,
-      },
+      priceRange: { min: minPrice, max: maxPrice },
     }
     return HttpResponse.json(facets)
   }),
@@ -102,15 +103,17 @@ export const catalogHandlers = [
     const sort = (params.get('sort') ?? 'recent') as CatalogSort
     const collections = params.getAll('collections')
     const networks = params.getAll('networks') as Network[]
-    const minPrice = params.has('minPrice') ? Number(params.get('minPrice')) : undefined
-    const maxPrice = params.has('maxPrice') ? Number(params.get('maxPrice')) : undefined
+    const minParam = params.get('minPrice')
+    const maxParam = params.get('maxPrice')
+    const minPrice = isEthString(minParam) ? minParam : undefined
+    const maxPrice = isEthString(maxParam) ? maxParam : undefined
     const q = params.get('q')?.trim()
 
     let nfts = catalogNfts()
     if (collections.length) nfts = nfts.filter((nft) => collections.includes(nft.collectionId))
     if (networks.length) nfts = nfts.filter((nft) => networks.includes(nft.network))
-    if (minPrice !== undefined) nfts = nfts.filter((nft) => nft.price >= minPrice)
-    if (maxPrice !== undefined) nfts = nfts.filter((nft) => nft.price <= maxPrice)
+    if (minPrice !== undefined) nfts = nfts.filter((nft) => compareEth(nft.price, minPrice) >= 0)
+    if (maxPrice !== undefined) nfts = nfts.filter((nft) => compareEth(nft.price, maxPrice) <= 0)
     if (q) nfts = nfts.filter((nft) => normalize(nft.name).includes(normalize(q)))
 
     if (tab === 'new') {
@@ -122,8 +125,8 @@ export const catalogHandlers = [
     }
 
     nfts = [...nfts].sort((a, b) => {
-      if (sort === 'price-asc') return a.price - b.price
-      if (sort === 'price-desc') return b.price - a.price
+      if (sort === 'price-asc') return compareEth(a.price, b.price)
+      if (sort === 'price-desc') return compareEth(b.price, a.price)
       return Date.parse(b.listedAt) - Date.parse(a.listedAt)
     })
 

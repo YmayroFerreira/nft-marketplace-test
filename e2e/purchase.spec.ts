@@ -11,7 +11,7 @@ test.describe('Compra', () => {
     await expect(page).toHaveURL(/\/carrinho/)
 
     // The demo cart already had 2 editions; 2 more were added
-    await expect(page.getByRole('group', { name: 'Edições de Emerald Ape #042' }).locator('output')).toHaveText('4')
+    await expect(page.getByRole('group', { name: 'Edições de Emerald Ape #042 (1/50)' }).locator('output')).toHaveText('4')
 
     await page.getByRole('link', { name: 'Conectar e finalizar' }).click()
     await expect(page).toHaveURL(/\/pagamento/)
@@ -37,7 +37,7 @@ test.describe('Compra', () => {
     await page.getByRole('button', { name: 'Aplicar' }).click()
     await expect(total).toContainText('24.163 ETH')
 
-    await page.getByRole('button', { name: 'Remover Violet Nomad #314 do carrinho' }).click()
+    await page.getByRole('button', { name: 'Remover Violet Nomad #314 (1/50) do carrinho' }).click()
     await expect(page.getByText('Violet Nomad #314')).toHaveCount(0)
   })
 
@@ -92,7 +92,7 @@ test.describe('Compra', () => {
   test('o estoque do NFT diminui ao vivo depois de uma compra (nft.updated)', async ({ page }) => {
     await gotoStable(page, '/nft/emerald-ape-042')
     await signIn(page)
-    await expect(page.getByText('50 de 50 edições disponíveis')).toBeVisible()
+    await expect(page.getByText('50 de 50 disponíveis na edição 1/50')).toBeVisible()
 
     // Buys the demo cart (2 editions of Emerald Ape) through the API, without leaving the page
     const cart = await apiFetch<{ version: number }>(page, '/api/cart')
@@ -103,6 +103,6 @@ test.describe('Compra', () => {
       headers: { 'Idempotency-Key': 'e2e-stock' },
     })
 
-    await expect(page.getByText('48 de 50 edições disponíveis')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('48 de 50 disponíveis na edição 1/50')).toBeVisible({ timeout: 15_000 })
   })
 })

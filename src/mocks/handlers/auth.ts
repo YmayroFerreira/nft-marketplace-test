@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 import type { AuthResponse, SignInRequest, SignUpRequest, SocialProvider } from '@/types/account'
 import { commit, createSession, deleteSession, getDb, nextId, publicUser, type StoredUser } from '../db'
 import { API, apiError, bearerToken, readJson, requireUser, simulateNetwork } from '../http-utils'
+import { hashPassword, verifyPassword } from '../password'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MIN_PASSWORD_LENGTH = 8
@@ -12,9 +13,9 @@ function authResponse(user: StoredUser, status = 200) {
   return HttpResponse.json(body, { status })
 }
 
-function createUser(data: { username: string; email: string; password: string; displayName: string }) {
+async function createUser(data: { username: string; email: string; password: string; displayName: string }) {
   const db = getDb()
-  const user: StoredUser = { id: nextId('user'), ...data }
+  const user: StoredUser = { id: nextId('user'), ...data, password: await hashPassword(data.password) }
   db.users[user.id] = user
   db.profiles[user.id] = {
     displayName: data.displayName,
@@ -60,7 +61,7 @@ export const authHandlers = [
         username: 'Este nome de usuário já está em uso.',
       })
 
-    const user = createUser({ username, email, password, displayName: username })
+    const user = await createUser({ username, email, password, displayName: username })
     return authResponse(user, 201)
   }),
 
@@ -70,7 +71,7 @@ export const authHandlers = [
 
     const body = await readJson<SignInRequest>(request)
     const user = findUserByEmail(body?.email?.trim() ?? '')
-    if (!user || user.password !== body?.password) {
+    if (!user || !(await verifyPassword(body?.password ?? '', user.password))) {
       return apiError(401, 'invalid_credentials', 'E-mail ou senha incorretos.')
     }
     return authResponse(user)
@@ -89,12 +90,12 @@ export const authHandlers = [
     const email = `${provider}.colecionador@kurio.dev`
     const user =
       findUserByEmail(email) ??
-      createUser({
+      (await createUser({
         username: `${provider}_colecionador`,
         email,
         password: crypto.randomUUID(),
         displayName: provider === 'google' ? 'Colecionador Google' : 'Colecionador Facebook',
-      })
+      }))
     return authResponse(user)
   }),
 

@@ -51,8 +51,3 @@ export async function readJson<T>(request: Request): Promise<Partial<T> | null> 
     return null
   }
 }
-
-/** Rounds ETH amounts to 3 decimals to avoid floating point noise */
-export function eth(value: number) {
-  return Math.round(value * 1000) / 1000
-}

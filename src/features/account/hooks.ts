@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
 import { cartApi, favoritesApi, ordersApi, profileApi, walletsApi } from '@/api/endpoints'
 import type { Cart, CreateOrderRequest, Favorites, Order } from '@/types/account'
+import type { EditionId } from '@/types/catalog'
 import { useAuth } from '../auth/auth-context'
 import { accountKeys } from './keys'
 
@@ -43,13 +44,13 @@ function useCartMutation<TVariables>(mutationFn: (variables: TVariables) => Prom
 }
 
 export function useSetCartItem() {
-  return useCartMutation((v: { nftId: string; quantity: number; expectedVersion?: number }) =>
-    cartApi.setItem(v.nftId, { quantity: v.quantity, expectedVersion: v.expectedVersion }),
+  return useCartMutation((v: { nftId: string; editionId: EditionId; quantity: number; expectedVersion?: number }) =>
+    cartApi.setItem(v.nftId, v.editionId, { quantity: v.quantity, expectedVersion: v.expectedVersion }),
   )
 }
 
 export function useRemoveCartItem() {
-  return useCartMutation((nftId: string) => cartApi.removeItem(nftId))
+  return useCartMutation((v: { nftId: string; editionId: EditionId }) => cartApi.removeItem(v.nftId, v.editionId))
 }
 
 export function useApplyPromo() {
@@ -60,17 +61,17 @@ export function useRemovePromo() {
   return useCartMutation(() => cartApi.removePromo())
 }
 
-/** Adds editions of an NFT on top of what is already in the cart */
+/** Adds copies of an NFT edition on top of what is already in the cart */
 export function useAddToCart() {
   const queryClient = useQueryClient()
   const { userId } = useUserId()
   const setItem = useSetCartItem()
   return {
     ...setItem,
-    add: async (nftId: string, name: string, quantity = 1) => {
+    add: async (nftId: string, editionId: EditionId, name: string, quantity = 1) => {
       const cart = queryClient.getQueryData<Cart>(accountKeys.cart(userId)) ?? (await cartApi.get())
-      const current = cart.items.find((item) => item.nftId === nftId)?.quantity ?? 0
-      await setItem.mutateAsync({ nftId, quantity: current + quantity })
+      const current = cart.items.find((item) => item.nftId === nftId && item.editionId === editionId)?.quantity ?? 0
+      await setItem.mutateAsync({ nftId, editionId, quantity: current + quantity })
       toast.success(`${name} adicionado ao carrinho.`)
     },
   }

@@ -16,7 +16,7 @@ import type {
   User,
   Wallet,
 } from '@/types/account'
-import type { CatalogFacets, CatalogQuery, Nft, NftDetail, NftReview, Paginated } from '@/types/catalog'
+import type { CatalogFacets, CatalogQuery, EditionId, Nft, NftDetail, NftReview, Paginated } from '@/types/catalog'
 import type { BlogPost, Promo } from '@/types/content'
 import { api } from './client'
 
@@ -58,9 +58,11 @@ export const authApi = {
 
 export const cartApi = {
   get: () => api.get<Cart>('/cart').then((r) => r.data),
-  setItem: (nftId: string, body: UpdateCartItemRequest) =>
-    api.put<Cart>(`/cart/items/${encodeURIComponent(nftId)}`, body).then((r) => r.data),
-  removeItem: (nftId: string) => api.delete<Cart>(`/cart/items/${encodeURIComponent(nftId)}`).then((r) => r.data),
+  /** A cart line is one edition of one NFT */
+  setItem: (nftId: string, editionId: EditionId, body: UpdateCartItemRequest) =>
+    api.put<Cart>(`/cart/items/${encodeURIComponent(nftId)}/${editionId}`, body).then((r) => r.data),
+  removeItem: (nftId: string, editionId: EditionId) =>
+    api.delete<Cart>(`/cart/items/${encodeURIComponent(nftId)}/${editionId}`).then((r) => r.data),
   applyPromo: (code: string) => api.post<Cart>('/cart/promo', { code }).then((r) => r.data),
   removePromo: () => api.delete<Cart>('/cart/promo').then((r) => r.data),
 }

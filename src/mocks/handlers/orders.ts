@@ -4,7 +4,7 @@ import { commit, getCart, getDb, nextId, touchCart, type StoredOrder } from '../
 import { API, apiError, readJson, requireUser, simulateNetwork } from '../http-utils'
 import { publishNftUpdated, publishOrderUpdated } from '../realtime'
 import { getScenario } from '../scenarios'
-import { toCart } from './cart'
+import { findEdition, toCart } from './cart'
 
 /** Time from `pending` to `processing`, and from `processing` to the final status */
 const PROCESSING_DELAY_MS = 1500
@@ -33,20 +33,22 @@ function settle(order: StoredOrder) {
     // Payment failed: give the items back to the user's cart
     const cart = getCart(order.userId)
     for (const item of order.items) {
-      const existing = cart.items.find((i) => i.nftId === item.nftId)
+      const existing = cart.items.find((i) => i.nftId === item.nftId && i.editionId === item.editionId)
       if (existing) existing.quantity += item.quantity
-      else cart.items.push({ nftId: item.nftId, quantity: item.quantity })
+      else cart.items.push({ nftId: item.nftId, editionId: item.editionId, quantity: item.quantity })
     }
     touchCart(cart)
     update(order, { status: 'failed', failureReason: 'A transação foi recusada pela rede. Nenhum valor foi cobrado.' })
     return
   }
 
-  // Confirmed: the purchased editions leave the stock
+  // Confirmed: the purchased copies leave the stock of their edition
   for (const item of order.items) {
     const nft = db.nfts[item.nftId]
-    if (!nft) continue
-    nft.availableEditions = Math.max(0, nft.availableEditions - item.quantity)
+    const edition = findEdition(nft, item.editionId)
+    if (!nft || !edition) continue
+    edition.available = Math.max(0, edition.available - item.quantity)
+    nft.availableEditions = nft.editions.reduce((sum, e) => sum + e.available, 0)
     nft.version += 1
     publishNftUpdated(nft)
   }
@@ -106,12 +108,12 @@ export const ordersHandlers = [
         { status: 409 },
       )
     }
-    const unavailable = cart.items.find((item) => item.quantity > item.availableEditions)
+    const unavailable = cart.items.find((item) => item.quantity > item.available)
     if (unavailable) {
       return apiError(
         409,
         'insufficient_editions',
-        `Só restam ${unavailable.availableEditions} edições de ${unavailable.name}.`,
+        `Só restam ${unavailable.available} cópias da edição ${unavailable.editionLabel} de ${unavailable.name}.`,
       )
     }
 
@@ -121,7 +123,7 @@ export const ordersHandlers = [
       userId,
       idempotencyKey,
       status: 'pending',
-      items: cart.items.map(({ availableEditions: _available, ...item }) => item),
+      items: cart.items.map(({ available: _available, ...item }) => item),
       subtotal: cart.subtotal,
       discount: cart.discount,
       networkFee: cart.networkFee,

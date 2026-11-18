@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 import type { ChangePasswordRequest, UpdateProfileRequest } from '@/types/account'
 import { commit, getDb } from '../db'
 import { API, apiError, readJson, requireUser, simulateNetwork } from '../http-utils'
+import { hashPassword, verifyPassword } from '../password'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ENS_PATTERN = /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i
@@ -67,15 +68,15 @@ export const profileHandlers = [
     if (auth.error) return auth.error
 
     const body = await readJson<ChangePasswordRequest>(request)
-    if (body?.currentPassword !== auth.user.password) {
+    if (!(await verifyPassword(body?.currentPassword ?? '', auth.user.password))) {
       return apiError(422, 'validation_error', 'Confira os campos.', { currentPassword: 'Senha atual incorreta.' })
     }
-    if (!body.newPassword || body.newPassword.length < MIN_PASSWORD_LENGTH) {
+    if (!body?.newPassword || body.newPassword.length < MIN_PASSWORD_LENGTH) {
       return apiError(422, 'validation_error', 'Confira os campos.', {
         newPassword: `A nova senha precisa ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.`,
       })
     }
-    getDb().users[auth.user.id].password = body.newPassword
+    getDb().users[auth.user.id].password = await hashPassword(body.newPassword)
     commit()
     return new HttpResponse(null, { status: 204 })
   }),

@@ -82,7 +82,7 @@ function CartItems({ cart }: { cart: Cart }) {
         <tbody aria-busy={isUpdating}>
           {cart.items.map((item) => (
             <tr
-              key={item.nftId}
+              key={`${item.nftId}:${item.editionId}`}
               className="grid grid-cols-[1fr_auto] gap-3 border-b border-border py-4 md:table-row md:py-0"
             >
               <td className="col-span-2 md:py-4">
@@ -90,7 +90,9 @@ function CartItems({ cart }: { cart: Cart }) {
                   <img src={item.imageUrl} alt="" width={70} height={70} loading="lazy" className="size-[70px] rounded-lg object-cover" />
                   <span className="flex flex-col gap-1">
                     <span className="text-base text-foreground">{item.name}</span>
-                    <span className="text-xs text-text-secondary">ID do token: {item.tokenId}</span>
+                    <span className="text-xs text-text-secondary">
+                      ID do token: {item.tokenId} · Edição {item.editionLabel}
+                    </span>
                   </span>
                 </Link>
               </td>
@@ -101,12 +103,12 @@ function CartItems({ cart }: { cart: Cart }) {
               <td className="row-start-3 md:py-4">
                 <QuantityStepper
                   size="sm"
-                  label={`Edições de ${item.name}`}
+                  label={`Edições de ${item.name} (${item.editionLabel})`}
                   value={item.quantity}
-                  max={item.availableEditions}
+                  max={item.available}
                   disabled={isUpdating}
                   onChange={(quantity) =>
-                    setItem.mutate({ nftId: item.nftId, quantity, expectedVersion: cart.version })
+                    setItem.mutate({ nftId: item.nftId, editionId: item.editionId, quantity, expectedVersion: cart.version })
                   }
                 />
               </td>
@@ -116,9 +118,9 @@ function CartItems({ cart }: { cart: Cart }) {
               <td className="row-start-3 text-right md:py-4">
                 <button
                   type="button"
-                  onClick={() => removeItem.mutate(item.nftId)}
+                  onClick={() => removeItem.mutate({ nftId: item.nftId, editionId: item.editionId })}
                   disabled={isUpdating}
-                  aria-label={`Remover ${item.name} do carrinho`}
+                  aria-label={`Remover ${item.name} (${item.editionLabel}) do carrinho`}
                   className="grid size-9 place-items-center rounded-md text-text-secondary hover:bg-accent hover:text-destructive disabled:opacity-40"
                 >
                   <Trash2 className="size-5" aria-hidden />

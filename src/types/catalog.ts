@@ -1,3 +1,5 @@
+import type { EthString } from '@/lib/eth'
+
 export type Network = 'ethereum' | 'polygon' | 'solana'
 
 export type NftRarity = 'common' | 'rare'
@@ -7,15 +9,17 @@ export interface Nft {
   id: string
   name: string
   imageUrl: string
-  /** Current price in ETH */
-  price: number
-  /** Previous price in ETH, shown struck through when the NFT is discounted */
-  previousPrice?: number
+  /** Price of the default edition, as a decimal string ("1.19") */
+  price: EthString
+  /** Previous price of the default edition, shown struck through when discounted */
+  previousPrice?: EthString
+  /** Edition used by quick actions (add to cart from a card) */
+  defaultEditionId: EditionId
   collectionId: string
   network: Network
   /** Rare NFTs show the "RARO" badge */
   rarity?: NftRarity
-  /** Editions still available for purchase */
+  /** Copies still available, summed over all editions */
   availableEditions: number
   totalEditions: number
   /** ISO date the NFT was listed */
@@ -39,8 +43,8 @@ export interface NftDetail extends Nft {
   description: string[]
   gallery: string[]
   attributes: NftAttribute[]
-  /** Edition sizes shown as options in the design (1/1, 1/10, 1/50, ABERTA) */
-  editionOptions: string[]
+  /** Edition options from the design (1/1, 1/10, 1/50, ABERTA), each with its own price and stock */
+  editions: NftEdition[]
   rating: { average: number; count: number }
   contract: {
     address: string
@@ -48,6 +52,18 @@ export interface NftDetail extends Nft {
     royaltyPercent: number
     storage: string
   }
+}
+
+export type EditionId = '1-1' | '1-10' | '1-50' | 'open'
+
+export interface NftEdition {
+  id: EditionId
+  /** Label shown in the design: "1/1", "1/10", "1/50", "ABERTA" */
+  label: string
+  price: EthString
+  /** Copies left for sale; 0 means the edition is unavailable */
+  available: number
+  total: number
 }
 
 export interface NftReview {
@@ -71,8 +87,8 @@ export interface NetworkFacet {
 }
 
 export interface PriceRange {
-  min: number
-  max: number
+  min: EthString
+  max: EthString
 }
 
 export interface CatalogFacets {
@@ -91,8 +107,8 @@ export interface CatalogQuery {
   sort?: CatalogSort
   collections?: string[]
   networks?: Network[]
-  minPrice?: number
-  maxPrice?: number
+  minPrice?: EthString
+  maxPrice?: EthString
   q?: string
 }
 

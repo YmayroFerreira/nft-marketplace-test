@@ -1,4 +1,5 @@
-import type { Network, Nft } from './catalog'
+import type { EthString } from '@/lib/eth'
+import type { EditionId, Network, Nft } from './catalog'
 
 // ---------- Session ----------
 
@@ -32,26 +33,30 @@ export type SocialProvider = 'google' | 'facebook'
 
 // ---------- Cart ----------
 
+/** A cart line is one edition of one NFT */
 export interface CartItem {
   nftId: string
+  editionId: EditionId
+  editionLabel: string
   name: string
   imageUrl: string
   tokenId: string
-  unitPrice: number
-  /** Editions of this NFT in the cart */
+  unitPrice: EthString
+  /** Copies of this edition in the cart (integer) */
   quantity: number
-  lineTotal: number
-  availableEditions: number
+  lineTotal: EthString
+  /** Copies of this edition still for sale: the maximum quantity */
+  available: number
 }
 
 export interface Cart {
   items: CartItem[]
   itemCount: number
   promoCode: string | null
-  subtotal: number
-  discount: number
-  networkFee: number
-  total: number
+  subtotal: EthString
+  discount: EthString
+  networkFee: EthString
+  total: EthString
   /** Increases on every change; send it back as `expectedVersion` to detect conflicts */
   version: number
   updatedAt: string
@@ -92,24 +97,27 @@ export type UpdateWalletRequest = Partial<Pick<Wallet, 'label' | 'ensName' | 'is
 
 export type OrderStatus = 'pending' | 'processing' | 'confirmed' | 'failed'
 
+/** Snapshot of a cart line at purchase time; later catalog changes never alter it */
 export interface OrderItem {
   nftId: string
+  editionId: EditionId
+  editionLabel: string
   name: string
   imageUrl: string
   tokenId: string
-  unitPrice: number
+  unitPrice: EthString
   quantity: number
-  lineTotal: number
+  lineTotal: EthString
 }
 
 export interface Order {
   id: string
   status: OrderStatus
   items: OrderItem[]
-  subtotal: number
-  discount: number
-  networkFee: number
-  total: number
+  subtotal: EthString
+  discount: EthString
+  networkFee: EthString
+  total: EthString
   wallet: Pick<Wallet, 'id' | 'label' | 'provider' | 'network' | 'address'>
   /** Set when the order is confirmed */
   transactionHash: string | null

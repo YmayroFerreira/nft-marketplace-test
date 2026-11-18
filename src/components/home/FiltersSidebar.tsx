@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
+import { toWei, type EthString } from '@/lib/eth'
 import { formatEthRange } from '@/lib/format'
 import type { CatalogFacets, Network, PriceRange } from '@/types/catalog'
 
@@ -18,6 +19,22 @@ interface FiltersSidebarProps {
   className?: string
 }
 
+/**
+ * The slider works in integer hundredths of ETH (0.02 ETH = 2), so no floating
+ * point is involved; values are converted back to decimal strings for the API.
+ */
+const WEI_PER_CENT = 10n ** 16n
+
+function toCents(value: EthString, round: 'down' | 'up') {
+  const wei = toWei(value)
+  const cents = wei / WEI_PER_CENT
+  return Number(round === 'up' && wei % WEI_PER_CENT !== 0n ? cents + 1n : cents)
+}
+
+function fromCents(cents: number): EthString {
+  return `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`
+}
+
 function toggle<T>(list: T[], item: T) {
   return list.includes(item) ? list.filter((i) => i !== item) : [...list, item]
 }
@@ -26,7 +43,10 @@ export function FiltersSidebar({ facets, value, onChange, className }: FiltersSi
   const bounds = facets.priceRange
   const applied = value.price ?? bounds
   // The slider only changes the query when "Aplicar" is pressed
-  const [draftPrice, setDraftPrice] = useState<[number, number]>([applied.min, applied.max])
+  const [draftPrice, setDraftPrice] = useState<[number, number]>([
+    toCents(applied.min, 'down'),
+    toCents(applied.max, 'up'),
+  ])
 
   return (
     <section aria-label="Filtros" className={cn('bg-surface-card p-5', className)}>
@@ -50,20 +70,22 @@ export function FiltersSidebar({ facets, value, onChange, className }: FiltersSi
           <div className="flex flex-col gap-3 pl-3">
             <Slider
               aria-label="Faixa de preço em ETH"
-              min={bounds.min}
-              max={bounds.max}
-              step={0.01}
+              min={toCents(bounds.min, 'down')}
+              max={toCents(bounds.max, 'up')}
+              step={1}
               value={draftPrice}
               onValueChange={(next) => setDraftPrice(next as [number, number])}
               className="py-2 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:size-[15px] [&_[data-slot=slider-thumb]]:border-0 [&_[data-slot=slider-thumb]]:bg-primary [&_[data-slot=slider-track]]:h-[3px] [&_[data-slot=slider-track]]:bg-primary/60"
             />
             <p className="text-[15px] text-foreground" aria-live="polite">
-              Preço: {formatEthRange(draftPrice[0], draftPrice[1])}
+              Preço: {formatEthRange(fromCents(draftPrice[0]), fromCents(draftPrice[1]))}
             </p>
             <Button
               size="brand-sm"
               className="w-fit"
-              onClick={() => onChange({ ...value, price: { min: draftPrice[0], max: draftPrice[1] } })}
+              onClick={() =>
+                onChange({ ...value, price: { min: fromCents(draftPrice[0]), max: fromCents(draftPrice[1]) } })
+              }
             >
               Aplicar
             </Button>

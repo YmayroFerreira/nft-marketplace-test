@@ -1,21 +1,21 @@
-const ethFormatter = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
+import { displayEth, type EthString } from './eth'
 
-/** 1.19 → "1.19 ETH" (the Figma uses a dot as decimal separator for prices) */
-export function formatEth(value: number) {
-  return `${ethFormatter.format(value)} ETH`
+/**
+ * "1.19" → "1.19 ETH". Amounts are decimal strings and are shown with every
+ * significant decimal (no rounding), with at least 2 decimals: 0.016, 26.846.
+ * The Figma uses a dot as decimal separator for prices.
+ */
+export function formatEth(value: EthString) {
+  return `${displayEth(value)} ETH`
 }
 
-const ethTotalFormatter = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 3,
-})
+/** Same as formatEth; kept as a separate name for totals and fees */
+export const formatEthTotal = formatEth
 
-/** Totals and fees keep up to 3 decimals, as in the cart design (0.016, 26.846) */
-export function formatEthTotal(value: number) {
-  return `${ethTotalFormatter.format(value)} ETH`
+/** "0.02", "12.3" → "0,02 - 12,30 ETH" (the Figma filter uses the pt-BR format) */
+export function formatEthRange(min: EthString, max: EthString) {
+  const ptBr = (value: EthString) => displayEth(value).replace('.', ',')
+  return `${ptBr(min)} - ${ptBr(max)} ETH`
 }
 
 const fullDateFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -32,16 +32,6 @@ export function formatDate(isoDate: string) {
 /** 0xA91F…E82C */
 export function shortHash(value: string, start = 6, end = 4) {
   return value.length > start + end ? `${value.slice(0, start)}…${value.slice(-end)}` : value
-}
-
-const rangeFormatter = new Intl.NumberFormat('pt-BR', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-
-/** 0.02, 12.3 → "0,02 - 12,30 ETH" (the Figma filter uses the pt-BR format) */
-export function formatEthRange(min: number, max: number) {
-  return `${rangeFormatter.format(min)} - ${rangeFormatter.format(max)} ETH`
 }
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {

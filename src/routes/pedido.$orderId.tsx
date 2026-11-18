@@ -154,11 +154,13 @@ function OrderCard({ order }: { order: Order }) {
         </h2>
         <ul className="flex flex-col gap-3">
           {order.items.map((item) => (
-            <li key={item.nftId} className="flex items-center gap-3 text-sm">
+            <li key={`${item.nftId}:${item.editionId}`} className="flex items-center gap-3 text-sm">
               <img src={item.imageUrl} alt="" width={48} height={48} className="size-12 rounded-md object-cover" />
               <span className="flex flex-1 flex-col">
                 <span className="text-foreground">{item.name}</span>
-                <span className="text-xs text-text-secondary">ID do token: {item.tokenId}</span>
+                <span className="text-xs text-text-secondary">
+                  ID do token: {item.tokenId} · Edição {item.editionLabel}
+                </span>
               </span>
               <span className="text-text-secondary">(x {item.quantity})</span>
               <span className="w-24 text-right text-foreground">{formatEthTotal(item.lineTotal)}</span>

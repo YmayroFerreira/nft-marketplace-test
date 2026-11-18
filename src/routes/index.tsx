@@ -9,6 +9,7 @@ import { PromoSection } from '@/components/home/PromoSection'
 import { useNftCardActions } from '@/features/catalog/useNftCardActions'
 import { useQuery } from '@tanstack/react-query'
 import { catalogQueries, contentQueries } from '@/features/catalog/queries'
+import { isEthString, type EthString } from '@/lib/eth'
 import type { CatalogQuery, CatalogSort, CatalogTab, Network } from '@/types/catalog'
 
 const TABS: CatalogTab[] = ['all', 'new', 'trending']
@@ -22,8 +23,8 @@ interface HomeSearch {
   sort?: CatalogSort
   collections?: string[]
   networks?: Network[]
-  minPrice?: number
-  maxPrice?: number
+  minPrice?: EthString
+  maxPrice?: EthString
   /** Free-text search from the mobile search bar */
   q?: string
 }
@@ -32,6 +33,15 @@ function asStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined
   const strings = value.filter((v): v is string => typeof v === 'string')
   return strings.length ? strings : undefined
+}
+
+/**
+ * Prices are decimal strings. The router parses the URL as JSON, so
+ * "?minPrice=1.50" may arrive as a number: accept both and normalize.
+ */
+function asEthString(value: unknown): EthString | undefined {
+  const text = typeof value === 'number' ? String(value) : value
+  return isEthString(text) ? text : undefined
 }
 
 function asPositiveNumber(value: unknown): number | undefined {
@@ -50,8 +60,8 @@ export const Route = createFileRoute('/')({
       networks: asStringArray(search.networks)?.filter((n): n is Network =>
         NETWORKS.includes(n as Network),
       ),
-      minPrice: asPositiveNumber(search.minPrice),
-      maxPrice: asPositiveNumber(search.maxPrice),
+      minPrice: asEthString(search.minPrice),
+      maxPrice: asEthString(search.maxPrice),
       q: typeof search.q === 'string' && search.q.trim() ? search.q.trim() : undefined,
     }
   },

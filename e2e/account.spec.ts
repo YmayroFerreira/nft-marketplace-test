@@ -5,8 +5,12 @@ test.describe('Favoritos', () => {
   test('favoritar aparece na lista de interesse', async ({ page }) => {
     await gotoStable(page, '/nft/golden-beat-207')
     await signIn(page)
+    // The heart turns on optimistically: wait for the API before leaving the page,
+    // otherwise the navigation cancels the request
+    const saved = page.waitForResponse((r) => r.url().includes('/api/favorites/') && r.request().method() === 'PUT')
     await page.getByRole('button', { name: 'Favoritar', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Favoritado' })).toHaveAttribute('aria-pressed', 'true')
+    await saved
 
     await page.goto('/favoritos')
     await expect(page.getByRole('article').filter({ hasText: 'Golden Beat #207' })).toBeVisible()

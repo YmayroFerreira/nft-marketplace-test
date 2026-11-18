@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { formatDate, formatEth } from '@/lib/format'
 import heartIcon from '@/assets/icons/heart.svg'
 import zoomIcon from '@/assets/icons/zoom.svg'
-import type { NftDetail } from '@/types/catalog'
+import type { EditionId, NftDetail } from '@/types/catalog'
 
 export const Route = createFileRoute('/nft/$nftId')({
   component: NftDetailsPage,
@@ -56,19 +56,30 @@ function Overview({ nft }: { nft: NftDetail }) {
   const navigate = useNavigate()
   const { requireAuth } = useAuth()
   const [imageIndex, setImageIndex] = useState(0)
-  const [edition, setEdition] = useState(nft.editionOptions[2] ?? nft.editionOptions[0])
+  // Default edition, or the first one with stock if it sold out
+  const [editionId, setEditionId] = useState<EditionId>(
+    () =>
+      (nft.editions.find((e) => e.id === nft.defaultEditionId && e.available > 0) ??
+        nft.editions.find((e) => e.available > 0) ??
+        nft.editions[0]
+      ).id,
+  )
   const [quantity, setQuantity] = useState(1)
   const favorites = useFavorites()
   const toggleFavorite = useToggleFavorite()
   const addToCart = useAddToCart()
   const isFavorite = favorites.data?.nftIds.includes(nft.id) ?? false
-  const soldOut = nft.availableEditions === 0
+  // Live data: the selected edition always comes from the (realtime-updated) NFT
+  const edition = nft.editions.find((e) => e.id === editionId) ?? nft.editions[0]
+  const soldOut = edition.available === 0
+  // A stock drop (realtime event) may leave the chosen quantity above the limit
+  const safeQuantity = Math.min(quantity, Math.max(1, edition.available))
   const image = nft.gallery[imageIndex] ?? nft.imageUrl
 
   function buy() {
     requireAuth(async () => {
       try {
-        await addToCart.add(nft.id, nft.name, quantity)
+        await addToCart.add(nft.id, edition.id, nft.name, safeQuantity)
         void navigate({ to: '/carrinho' })
       } catch {
         // The error toast is shown by the mutation
@@ -127,8 +138,8 @@ function Overview({ nft }: { nft: NftDetail }) {
           </h1>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="flex items-center gap-3 text-xl font-bold text-text-accent" aria-live="polite">
-              {formatEth(nft.price)}
-              {nft.previousPrice !== undefined && (
+              {formatEth(edition.price)}
+              {edition.id === nft.defaultEditionId && nft.previousPrice !== undefined && (
                 <span className="text-base font-normal text-brand-secondary line-through">
                   <span className="sr-only">Preço anterior: </span>
                   {formatEth(nft.previousPrice)}
@@ -155,36 +166,49 @@ function Overview({ nft }: { nft: NftDetail }) {
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-2 text-sm font-bold text-foreground">Edição:</legend>
           <div className="flex flex-wrap gap-2">
-            {nft.editionOptions.map((option) => (
-              <label
-                key={option}
-                className={cn(
-                  'cursor-pointer rounded-full border px-3 py-1 text-xs text-foreground has-focus-visible:outline-2 has-focus-visible:outline-ring',
-                  option === edition ? 'border-primary' : 'border-transparent hover:border-border-soft',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="edition"
-                  value={option}
-                  checked={option === edition}
-                  onChange={() => setEdition(option)}
-                  className="sr-only"
-                />
-                {option}
-              </label>
-            ))}
+            {nft.editions.map((option) => {
+              const unavailable = option.available === 0
+              return (
+                <label
+                  key={option.id}
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-xs has-focus-visible:outline-2 has-focus-visible:outline-ring',
+                    option.id === editionId ? 'border-primary' : 'border-transparent',
+                    unavailable
+                      ? 'cursor-not-allowed text-text-secondary/60 line-through'
+                      : 'cursor-pointer text-foreground hover:border-border-soft',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="edition"
+                    value={option.id}
+                    checked={option.id === editionId}
+                    disabled={unavailable}
+                    onChange={() => {
+                      setEditionId(option.id)
+                      setQuantity(1)
+                    }}
+                    className="sr-only"
+                  />
+                  {option.label}
+                  {unavailable && <span className="sr-only"> (indisponível)</span>}
+                </label>
+              )
+            })}
           </div>
           <p className="text-xs text-text-secondary" aria-live="polite">
-            {soldOut ? 'Esgotado' : `${nft.availableEditions} de ${nft.totalEditions} edições disponíveis`}
+            {soldOut
+              ? `A edição ${edition.label} está indisponível.`
+              : `${edition.available} de ${edition.total} disponíveis na edição ${edition.label}`}
           </p>
         </fieldset>
 
         <div className="flex flex-wrap items-center gap-4">
           <QuantityStepper
             label={`Quantidade de ${nft.name}`}
-            value={quantity}
-            max={Math.max(1, nft.availableEditions)}
+            value={safeQuantity}
+            max={Math.max(1, edition.available)}
             onChange={setQuantity}
             disabled={soldOut}
           />

@@ -8,6 +8,7 @@ import { ApiError } from '@/api/client'
 import { useCart, useCreateOrder, useWallets } from '@/features/account/hooks'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 import { cn } from '@/lib/utils'
+import { compareEth } from '@/lib/eth'
 import { formatEthTotal, shortHash } from '@/lib/format'
 import type { Cart, Wallet } from '@/types/account'
 import { NETWORK_LABELS as NETWORK_NAMES } from '@/lib/wallets'
@@ -140,10 +141,10 @@ function CheckoutForm({ cart, wallets }: { cart: Cart; wallets: Wallet[] }) {
         </h2>
         <ul className="flex flex-col gap-3">
           {cart.items.map((item) => (
-            <li key={item.nftId} className="flex items-center gap-3 text-sm">
+            <li key={`${item.nftId}:${item.editionId}`} className="flex items-center gap-3 text-sm">
               <img src={item.imageUrl} alt="" width={44} height={44} className="size-11 rounded-md object-cover" />
               <span className="flex-1 text-foreground">
-                {item.name} <span className="text-text-secondary">(x {item.quantity})</span>
+                {item.name} <span className="text-text-secondary">· {item.editionLabel} (x {item.quantity})</span>
               </span>
               <span className="text-foreground">{formatEthTotal(item.lineTotal)}</span>
             </li>
@@ -154,7 +155,7 @@ function CheckoutForm({ cart, wallets }: { cart: Cart; wallets: Wallet[] }) {
             <dt>Subtotal</dt>
             <dd>{formatEthTotal(cart.subtotal)}</dd>
           </div>
-          {cart.discount > 0 && (
+          {compareEth(cart.discount, '0') > 0 && (
             <div className="flex justify-between">
               <dt>Desconto</dt>
               <dd>(-) {formatEthTotal(cart.discount)}</dd>

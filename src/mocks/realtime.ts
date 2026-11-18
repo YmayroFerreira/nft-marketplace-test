@@ -3,7 +3,7 @@ import { toSocketIo } from '@mswjs/socket.io-binding'
 import type { NftDetail } from '@/types/catalog'
 import type { NftUpdatedEvent, OrderUpdatedEvent } from '@/types/realtime'
 import { commit, getDb, userIdFromToken, type StoredOrder } from './db'
-import { eth } from './http-utils'
+import { scaleEth } from '@/lib/eth'
 import { getScenario } from './scenarios'
 
 /**
@@ -55,6 +55,7 @@ export function publishNftUpdated(nft: NftDetail) {
     price: nft.price,
     previousPrice: nft.previousPrice,
     availableEditions: nft.availableEditions,
+    editions: nft.editions.map((e) => ({ id: e.id, price: e.price, available: e.available })),
   })
   for (const connection of connections) connection.io.client.emit('nft.updated', payload)
 }
@@ -76,8 +77,10 @@ function tickPrice() {
   const nfts = Object.values(getDb().nfts)
   const nft = nfts[Math.floor(Math.random() * nfts.length)]
   if (!nft) return
-  const change = 1 + (Math.random() * 0.1 - 0.05)
-  nft.price = Math.max(0.01, eth(nft.price * change))
+  // Integer per-mille change between -5% and +5%, applied to every edition
+  const perMille = 950 + Math.floor(Math.random() * 101)
+  for (const edition of nft.editions) edition.price = scaleEth(edition.price, perMille, 1000, 4)
+  nft.price = nft.editions.find((e) => e.id === nft.defaultEditionId)?.price ?? nft.price
   nft.version += 1
   commit()
   publishNftUpdated(nft)

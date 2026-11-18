@@ -1,4 +1,6 @@
+import type { EthString } from '@/lib/eth'
 import type { OrderStatus } from './account'
+import type { EditionId } from './catalog'
 
 /**
  * Every realtime event has a stable identity (`eventId`), the affected
@@ -18,9 +20,11 @@ export type NftUpdatedEvent = RealtimeEventBase<
   'nft.updated',
   'nft',
   {
-    price: number
-    previousPrice?: number
+    /** Price of the default edition */
+    price: EthString
+    previousPrice?: EthString
     availableEditions: number
+    editions: { id: EditionId; price: EthString; available: number }[]
   }
 >
 

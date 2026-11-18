@@ -16,7 +16,7 @@ export function useNftCardActions() {
   return {
     favoriteIds,
     isFavorite: (nftId: string) => favoriteIds.has(nftId),
-    onAddToCart: (nft: Nft) => requireAuth(() => void addToCart.add(nft.id, nft.name).catch(() => {})),
+    onAddToCart: (nft: Nft) => requireAuth(() => void addToCart.add(nft.id, nft.defaultEditionId, nft.name).catch(() => {})),
     onToggleFavorite: (nft: Nft) =>
       requireAuth(() => toggleFavorite.mutate({ nftId: nft.id, favorite: !favoriteIds.has(nft.id) })),
   }

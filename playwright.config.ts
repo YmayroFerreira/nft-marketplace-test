@@ -17,13 +17,16 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // Each test runs a full browser plus PBKDF2 password hashing; more parallel
+  // workers than this makes slower machines time out
+  workers: process.env.CI ? 2 : 4,
   timeout: 45_000,
   expect: {
-    timeout: 10_000,
+    timeout: 15_000,
     toHaveScreenshot: {
-      // Small tolerance for font anti-aliasing differences
-      maxDiffPixelRatio: 0.01,
+      // Tolerance only for font anti-aliasing noise; 1% was enough to hide a
+      // changed line of text on a full page, so keep it small
+      maxDiffPixelRatio: 0.002,
       animations: 'disabled',
       caret: 'hide',
     },

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { getRealtimeSocket } from '@/api/realtime'
 import type { Cart, Order } from '@/types/account'
-import type { Nft, Paginated } from '@/types/catalog'
+import type { Nft, NftDetail, Paginated } from '@/types/catalog'
 import type { NftUpdatedEvent, OrderUpdatedEvent } from '@/types/realtime'
 import { accountKeys } from '../account/keys'
 import { useAuth } from '../auth/auth-context'
@@ -13,7 +13,17 @@ const MAX_REMEMBERED_EVENTS = 500
 /** Applies an `nft.updated` payload only if it is newer than the cached NFT */
 function applyNftEvent<T extends Nft>(nft: T, event: NftUpdatedEvent): T {
   if (nft.id !== event.resource.id || nft.version >= event.version) return nft
-  return { ...nft, ...event.data, version: event.version }
+  const { editions: editionChanges, ...listFields } = event.data
+  const updated = { ...nft, ...listFields, version: event.version }
+  // Detail data has editions: merge price/stock, keeping label and total
+  if ('editions' in nft && Array.isArray(nft.editions)) {
+    const detail = updated as unknown as NftDetail
+    detail.editions = detail.editions.map((edition) => ({
+      ...edition,
+      ...editionChanges.find((change) => change.id === edition.id),
+    }))
+  }
+  return updated
 }
 
 function handleNftUpdated(queryClient: QueryClient, event: NftUpdatedEvent, userId: string | null) {

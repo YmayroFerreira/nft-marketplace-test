@@ -1,6 +1,7 @@
 import type { Order, Profile, User, Wallet } from '@/types/account'
-import type { NftDetail } from '@/types/catalog'
+import type { EditionId, NftDetail } from '@/types/catalog'
 import { createSeedNfts } from './fixtures/nfts'
+import type { PasswordHash } from './password'
 
 /**
  * In-memory database of the mock API, persisted to localStorage so data
@@ -11,16 +12,17 @@ import { createSeedNfts } from './fixtures/nfts'
  * between users.
  */
 
-const STORAGE_KEY = 'kurio.mock.db.v1'
+/** Bump the version when the stored shape changes, so old data is discarded */
+const STORAGE_KEY = 'kurio.mock.db.v2'
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 
 export interface StoredUser extends User {
-  /** Mock only: plain text, never do this in a real backend */
-  password: string
+  /** Never the password itself: PBKDF2 hash with a per-user salt */
+  password: PasswordHash
 }
 
 export interface StoredCart {
-  items: { nftId: string; quantity: number }[]
+  items: { nftId: string; editionId: EditionId; quantity: number }[]
   promoCode: string | null
   version: number
   updatedAt: string
@@ -44,13 +46,22 @@ export interface MockDb {
   sequence: number
 }
 
-/** Fictitious demo account, documented in the README */
+/**
+ * Fictitious demo account, documented in the README (password: kurio1234).
+ * Only its hash is stored; it was computed once with the same PBKDF2 settings.
+ */
 export const DEMO_USER = {
   id: 'user-demo',
   email: 'colecionador@kurio.dev',
-  password: 'kurio1234',
   username: 'colecionador',
   displayName: 'Nova Colecionadora',
+}
+
+const DEMO_PASSWORD_HASH: PasswordHash = {
+  algorithm: 'PBKDF2-SHA256',
+  iterations: 100_000,
+  salt: 'a3f1c9d27e5b4086b1c2d3e4f5a69788',
+  hash: '35f28b00538b39eb9ecbc7e42c09b9ff66abe9f05692f62c4fa833c51a7b6728',
 }
 
 function now() {
@@ -64,19 +75,17 @@ function emptyCart(): StoredCart {
 function seed(): MockDb {
   const nfts = Object.fromEntries(createSeedNfts().map((nft) => [nft.id, nft]))
   const createdAt = now()
-  const { password, ...demoUser } = DEMO_USER
-
   return {
     nfts,
-    users: { [DEMO_USER.id]: { ...demoUser, password } },
+    users: { [DEMO_USER.id]: { ...DEMO_USER, password: DEMO_PASSWORD_HASH } },
     sessions: {},
     carts: {
       // Same items as the cart screen in the Figma
       [DEMO_USER.id]: {
         items: [
-          { nftId: 'emerald-ape-042', quantity: 2 },
-          { nftId: 'violet-nomad-314', quantity: 6 },
-          { nftId: 'ivory-baron-088', quantity: 9 },
+          { nftId: 'emerald-ape-042', editionId: '1-50', quantity: 2 },
+          { nftId: 'violet-nomad-314', editionId: '1-50', quantity: 6 },
+          { nftId: 'ivory-baron-088', editionId: '1-50', quantity: 9 },
         ],
         promoCode: null,
         version: 1,

@@ -55,7 +55,7 @@ test.describe('Catálogo', () => {
     await catalogCards(page).first().getByRole('link', { name: /Emerald Ape #042/ }).first().click()
     await expect(page).toHaveURL(/\/nft\/emerald-ape-042/)
     await expect(page.getByRole('heading', { level: 1, name: 'Emerald Ape #042' })).toBeVisible()
-    await expect(page.getByText('50 de 50 edições disponíveis')).toBeVisible()
+    await expect(page.getByText('50 de 50 disponíveis na edição 1/50')).toBeVisible()
   })
 
   test('detalhe inexistente mostra mensagem de não encontrado', async ({ page }) => {
