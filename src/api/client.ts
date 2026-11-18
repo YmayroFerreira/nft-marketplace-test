@@ -49,11 +49,15 @@ api.interceptors.response.use(
   (error: AxiosError<ApiErrorBody>) => {
     const status = error.response?.status ?? 0
     const body = error.response?.data
+    const timedOut = error.code === AxiosError.ECONNABORTED
+    const connectionCode = timedOut ? 'timeout' : 'network_error'
+    const connectionMessage = timedOut
+      ? 'O servidor demorou demais para responder.'
+      : 'Sem conexão com o servidor. Verifique sua internet.'
     const apiError = new ApiError(
       status,
-      body?.error?.code ?? (status === 0 ? 'network_error' : 'unknown_error'),
-      body?.error?.message ??
-        (status === 0 ? 'Sem conexão com o servidor. Verifique sua internet.' : 'Algo deu errado. Tente novamente.'),
+      body?.error?.code ?? (status === 0 ? connectionCode : 'unknown_error'),
+      body?.error?.message ?? (status === 0 ? connectionMessage : 'Algo deu errado. Tente novamente.'),
       body?.error?.fields,
       body,
     )

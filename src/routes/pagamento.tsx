@@ -49,6 +49,9 @@ function CheckoutContent() {
   const cart = useCart()
   const wallets = useWallets()
   const profile = useProfile()
+  // Cart of a purchase being sent. If the order went through but its response was
+  // lost, the real cart empties; the page stays so a retry can recover the order.
+  const [attemptCart, setAttemptCart] = useState<Cart | null>(null)
 
   if (cart.isPending || wallets.isPending || profile.isPending) {
     return <div className="skeleton-shimmer h-96 rounded-lg" aria-busy aria-label="Carregando pagamento" />
@@ -57,7 +60,7 @@ function CheckoutContent() {
   if (wallets.isError) return <ErrorState message={wallets.error.message} onRetry={() => void wallets.refetch()} />
   if (profile.isError) return <ErrorState message={profile.error.message} onRetry={() => void profile.refetch()} />
 
-  if (cart.data.items.length === 0) {
+  if (cart.data.items.length === 0 && !attemptCart) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-lg bg-surface-card px-6 py-16 text-center">
         <p className="text-lg text-foreground">Não há itens para pagar.</p>
@@ -68,7 +71,14 @@ function CheckoutContent() {
     )
   }
 
-  return <CheckoutFlow cart={cart.data} wallets={wallets.data} profile={profile.data} />
+  return (
+    <CheckoutFlow
+      cart={attemptCart ?? cart.data}
+      wallets={wallets.data}
+      profile={profile.data}
+      onAttemptChange={setAttemptCart}
+    />
+  )
 }
 
 type FieldErrors = Partial<Record<'fullName' | 'email' | 'phone' | 'wallet', string>>
@@ -94,9 +104,10 @@ interface CheckoutFlowProps {
   cart: Cart
   wallets: Wallet[]
   profile: Profile
+  onAttemptChange: (cart: Cart | null) => void
 }
 
-function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
+function CheckoutFlow({ cart, wallets, profile, onAttemptChange }: CheckoutFlowProps) {
   const navigate = useNavigate()
   const { user } = useAuth()
   const createOrder = useCreateOrder()
@@ -190,6 +201,7 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
   function confirm() {
     if (!quote || !connection || !wallet || createOrder.isPending) return
     setNotice(null)
+    onAttemptChange(cart)
     createOrder.mutate(
       {
         body: {
@@ -213,7 +225,10 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
         onError: (error) => {
           if (!(error instanceof ApiError)) return
           // A final answer from the server ends this attempt; network errors keep the key
-          if (!error.isRetryable) idempotencyKey.current = crypto.randomUUID()
+          if (!error.isRetryable) {
+            idempotencyKey.current = crypto.randomUUID()
+            onAttemptChange(null)
+          }
 
           if (error.code === 'quote_changed') {
             const body = error.body as { quote?: CheckoutQuote } | undefined

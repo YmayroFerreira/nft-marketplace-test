@@ -1,5 +1,5 @@
-import type { CheckoutQuote, Order, Profile, User, Wallet, WalletConnection } from '@/types/account'
-import type { EditionId, NftDetail } from '@/types/catalog'
+import type { CheckoutQuote, CollectorDetails, Order, Profile, User, Wallet, WalletConnection } from '@/types/account'
+import type { EditionId, Network, NftDetail } from '@/types/catalog'
 import { createSeedNfts } from './fixtures/nfts'
 import type { PasswordHash } from './password'
 
@@ -13,7 +13,7 @@ import type { PasswordHash } from './password'
  */
 
 /** Bump the version when the stored shape changes, so old data is discarded */
-const STORAGE_KEY = 'kurio.mock.db.v4'
+const STORAGE_KEY = 'kurio.mock.db.v5'
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 
 export interface StoredUser extends User {
@@ -31,6 +31,8 @@ export interface StoredCart {
 export interface StoredOrder extends Order {
   userId: string
   idempotencyKey: string
+  /** What was asked for, to recognize a retry of the same attempt */
+  request: { quoteId: string; walletId: string; network: Network; collector: CollectorDetails }
 }
 
 export interface StoredQuote extends CheckoutQuote {
@@ -74,6 +76,21 @@ const DEMO_PASSWORD_HASH: PasswordHash = {
   hash: '35f28b00538b39eb9ecbc7e42c09b9ff66abe9f05692f62c4fa833c51a7b6728',
 }
 
+/** Second fictitious account (password: kurio5678), used to check that data stays per user */
+export const SECOND_USER = {
+  id: 'user-curator',
+  email: 'curador@kurio.dev',
+  username: 'curador',
+  displayName: 'Theo Curador',
+}
+
+const SECOND_PASSWORD_HASH: PasswordHash = {
+  algorithm: 'PBKDF2-SHA256',
+  iterations: 100_000,
+  salt: '7c41e0a95bd3462f8e17a2c6d09b3f54',
+  hash: '2606adc0475f51a6454ce0621fcbb9e286e36eb28f05db62d06b5ac15aa7f14b',
+}
+
 function now() {
   return new Date().toISOString()
 }
@@ -87,7 +104,10 @@ function seed(): MockDb {
   const createdAt = now()
   return {
     nfts,
-    users: { [DEMO_USER.id]: { ...DEMO_USER, password: DEMO_PASSWORD_HASH } },
+    users: {
+      [DEMO_USER.id]: { ...DEMO_USER, password: DEMO_PASSWORD_HASH },
+      [SECOND_USER.id]: { ...SECOND_USER, password: SECOND_PASSWORD_HASH },
+    },
     sessions: {},
     carts: {
       // Same items as the cart screen in the Figma
@@ -101,8 +121,14 @@ function seed(): MockDb {
         version: 1,
         updatedAt: createdAt,
       },
+      [SECOND_USER.id]: {
+        items: [{ nftId: 'golden-beat-207', editionId: '1-50', quantity: 1 }],
+        promoCode: null,
+        version: 1,
+        updatedAt: createdAt,
+      },
     },
-    favorites: { [DEMO_USER.id]: ['neon-vessel-552'] },
+    favorites: { [DEMO_USER.id]: ['neon-vessel-552'], [SECOND_USER.id]: ['golden-beat-207'] },
     wallets: {
       [DEMO_USER.id]: [
         {
@@ -126,6 +152,18 @@ function seed(): MockDb {
           createdAt,
         },
       ],
+      [SECOND_USER.id]: [
+        {
+          id: 'wallet-curator-metamask',
+          label: 'Curadoria',
+          provider: 'metamask',
+          network: 'ethereum',
+          address: '0x3E7d1C9a5B2f4860aD17c3E9b6F05a8D2c4B71eF',
+          ensName: null,
+          isPrimary: true,
+          createdAt,
+        },
+      ],
     },
     profiles: {
       [DEMO_USER.id]: {
@@ -134,6 +172,15 @@ function seed(): MockDb {
         email: DEMO_USER.email,
         ensName: 'colecionador.kurio.eth',
         walletNickname: 'Principal',
+        avatarUrl: null,
+        updatedAt: createdAt,
+      },
+      [SECOND_USER.id]: {
+        displayName: SECOND_USER.displayName,
+        username: SECOND_USER.username,
+        email: SECOND_USER.email,
+        ensName: null,
+        walletNickname: 'Curadoria',
         avatarUrl: null,
         updatedAt: createdAt,
       },

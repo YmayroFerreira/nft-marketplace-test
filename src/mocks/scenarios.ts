@@ -29,6 +29,8 @@ export interface Scenario {
   walletDisconnects?: boolean
   /** A price changes between the review and the confirmation */
   quoteChanges?: boolean
+  /** The order is created, but its first response arrives after the client gave up */
+  orderTimeout?: boolean
 }
 
 export const SCENARIOS = {
@@ -47,6 +49,7 @@ export const SCENARIOS = {
   'wallet-rejects': { label: 'Carteira recusa conexão', latency: [250, 700], walletRejects: true, priceTickMs: null },
   'wallet-disconnects': { label: 'Carteira desconecta no envio', latency: [250, 700], walletDisconnects: true, priceTickMs: null },
   'quote-changes': { label: 'Preço muda antes de confirmar', latency: [0, 0], quoteChanges: true, priceTickMs: null },
+  'order-timeout': { label: 'Resposta do pedido expira', latency: [0, 0], orderTimeout: true, priceTickMs: null },
 } satisfies Record<string, Scenario>
 
 export type ScenarioName = keyof typeof SCENARIOS

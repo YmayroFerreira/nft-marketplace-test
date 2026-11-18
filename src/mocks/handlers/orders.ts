@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import type { CollectorDetails, CreateOrderRequest, Order } from '@/types/account'
 import type { Network } from '@/types/catalog'
 import { scaleEth } from '@/lib/eth'
@@ -12,6 +12,8 @@ import { issueQuote, sameQuote, toQuote } from './checkout'
 /** Time from `pending` to `processing`, and from `processing` to the final status */
 const PROCESSING_DELAY_MS = 1500
 const SETTLEMENT_DELAY_MS = 2500
+/** Longer than the 15 s timeout of the API client (`order-timeout` scenario) */
+const LOST_RESPONSE_DELAY_MS = 20_000
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_PATTERN = /^[0-9+()\s-]{8,20}$/
@@ -20,7 +22,7 @@ const PHONE_PATTERN = /^[0-9+()\s-]{8,20}$/
 const quoteChangedFor = new Set<string>()
 
 function toOrder(stored: StoredOrder): Order {
-  const { userId: _userId, idempotencyKey: _key, ...order } = stored
+  const { userId: _userId, idempotencyKey: _key, request: _request, ...order } = stored
   return order
 }
 
@@ -97,6 +99,22 @@ function validateCollector(collector: Partial<CollectorDetails> | undefined) {
   return { fields, collector: { fullName, email, ...(phone ? { phone } : {}) } }
 }
 
+/** A retry asks for the same purchase; a new quote is accepted if it has the same items and total */
+function isSameAttempt(order: StoredOrder, body: Partial<CreateOrderRequest> | null) {
+  const quote = body?.quoteId ? getDb().quotes[body.quoteId] : undefined
+  const sameQuote =
+    body?.quoteId === order.request.quoteId ||
+    (quote?.userId === order.userId &&
+      quote.total === order.total &&
+      JSON.stringify(quote.items) === JSON.stringify(order.items))
+  return (
+    sameQuote &&
+    body?.walletId === order.request.walletId &&
+    body?.network === order.request.network &&
+    JSON.stringify(validateCollector(body?.collector).collector) === JSON.stringify(order.request.collector)
+  )
+}
+
 /** 409 with a fresh quote: the client must show the new values and ask again */
 function quoteChanged(userId: string, message: string) {
   const result = issueQuote(userId)
@@ -134,9 +152,16 @@ export const ordersHandlers = [
     }
 
     const db = getDb()
+    const body = await readJson<CreateOrderRequest>(request)
+
     // Same key from the same user (double click, retry after a timeout): same order
     const existing = Object.values(db.orders).find((o) => o.userId === userId && o.idempotencyKey === idempotencyKey)
-    if (existing) return HttpResponse.json(toOrder(existing), { status: 200 })
+    if (existing) {
+      if (!isSameAttempt(existing, body)) {
+        return apiError(409, 'idempotency_conflict', 'Esta tentativa de compra já foi usada com outros dados.')
+      }
+      return HttpResponse.json(toOrder(existing), { status: 200 })
+    }
 
     // One purchase at a time: a new attempt while another is in progress would buy the same items twice
     const inProgress = Object.values(db.orders).find(
@@ -151,8 +176,6 @@ export const ordersHandlers = [
         { status: 409 },
       )
     }
-
-    const body = await readJson<CreateOrderRequest>(request)
 
     const { fields, collector } = validateCollector(body?.collector)
     if (Object.keys(fields).length) return apiError(422, 'validation_error', 'Confira seus dados.', fields)
@@ -206,6 +229,7 @@ export const ordersHandlers = [
       id: nextId('order'),
       userId,
       idempotencyKey,
+      request: { quoteId: quote.id, walletId: wallet.id, network: connection.network, collector },
       status: 'pending',
       items: quote.items,
       subtotal: quote.subtotal,
@@ -233,6 +257,7 @@ export const ordersHandlers = [
     commit()
 
     scheduleProgress(order)
+    if (getScenario().orderTimeout) await delay(LOST_RESPONSE_DELAY_MS)
     return HttpResponse.json(toOrder(order), { status: 201 })
   }),
 

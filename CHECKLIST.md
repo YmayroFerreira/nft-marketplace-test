@@ -62,11 +62,13 @@ Pendências e decisões para revisar antes da entrega.
 
 Levantados em 18/11/2026 por busca no código e nos nomes dos testes; confirmar cada item antes de implementar.
 
-- [ ] Fixtures com pelo menos dois usuários.
-- [ ] Cenários do MSW: falha de conexão, timeout após criar o pedido com recuperação por idempotência, respostas fora de ordem e edição esgotada durante a compra.
-- [ ] Reutilizar a chave de idempotência com conteúdo diferente deve gerar conflito.
+- [x] Fixtures com dois usuários (`colecionador@kurio.dev` / `kurio1234` e `curador@kurio.dev` / `kurio5678`).
+- [x] Cenário `order-timeout`: a resposta do pedido criado se perde e a nova tentativa recupera o mesmo pedido.
+- [ ] Cenários do MSW: falha de conexão, respostas fora de ordem e edição esgotada durante a compra.
+- [x] Reutilizar a chave de idempotência com conteúdo diferente gera conflito (`idempotency_conflict`).
 - [ ] Tela para rotas inexistentes.
-- [ ] Testes: troca de usuário, timeout com recuperação do mesmo pedido, preço alterado via Socket.IO no checkout, eventos duplicados ou antigos, desconexão e retomada de pedido pendente, e controle do relógio nos cenários sensíveis a tempo.
+- [x] Testes: troca de usuário e timeout com recuperação do mesmo pedido (`e2e/resilience.spec.ts`).
+- [ ] Testes: preço alterado via Socket.IO no checkout, eventos duplicados ou antigos, desconexão e retomada de pedido pendente, e controle do relógio nos cenários sensíveis a tempo.
 
 ## Entrega (nesta ordem)
 

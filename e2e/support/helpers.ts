@@ -3,6 +3,9 @@ import { expect, type Page } from '@playwright/test'
 /** Fictitious demo account seeded by the mock API */
 export const DEMO_USER = { email: 'colecionador@kurio.dev', password: 'kurio1234', firstName: 'Nova' }
 
+/** Second fictitious account, with its own cart, favorites and wallet */
+export const SECOND_USER = { email: 'curador@kurio.dev', password: 'kurio5678', displayName: 'Theo Curador' }
+
 /**
  * Opens a page with the `stable` mock scenario: no latency jitter, no random
  * failures and no price ticks, so assertions and screenshots are deterministic.
