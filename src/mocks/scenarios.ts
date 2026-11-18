@@ -29,6 +29,12 @@ export interface Scenario {
   walletDisconnects?: boolean
   /** A price changes between the review and the confirmation */
   quoteChanges?: boolean
+  /** Every API request fails at the network level, as if the connection were lost */
+  connectionFails?: boolean
+  /** The first catalog request answers after the ones made later */
+  outOfOrder?: boolean
+  /** The first item of the order sells out between the review and the confirmation */
+  editionSellsOut?: boolean
   /** The order is created, but its first response arrives after the client gave up */
   orderTimeout?: boolean
 }
@@ -49,6 +55,9 @@ export const SCENARIOS = {
   'wallet-rejects': { label: 'Carteira recusa conexão', latency: [250, 700], walletRejects: true, priceTickMs: null },
   'wallet-disconnects': { label: 'Carteira desconecta no envio', latency: [250, 700], walletDisconnects: true, priceTickMs: null },
   'quote-changes': { label: 'Preço muda antes de confirmar', latency: [0, 0], quoteChanges: true, priceTickMs: null },
+  offline: { label: 'Sem conexão', latency: [0, 0], connectionFails: true, priceTickMs: null },
+  'out-of-order': { label: 'Respostas fora de ordem', latency: [0, 0], outOfOrder: true, priceTickMs: null },
+  'edition-sells-out': { label: 'Edição esgota na compra', latency: [0, 0], editionSellsOut: true, priceTickMs: null },
   'order-timeout': { label: 'Resposta do pedido expira', latency: [0, 0], orderTimeout: true, priceTickMs: null },
 } satisfies Record<string, Scenario>
 

@@ -6,11 +6,19 @@ import { getScenario } from './scenarios'
 /** Base path of the mock REST API */
 export const API = '/api'
 
-/** Waits the scenario latency and, in the flaky scenario, sometimes fails */
-export async function simulateNetwork(): Promise<HttpResponse<ApiErrorBody> | null> {
-  const { latency, failureRate } = getScenario()
+/** Set by the mock controls; while null, the scenario decides */
+let connectionDown: boolean | null = null
+
+export function setConnectionDown(down: boolean) {
+  connectionDown = down
+}
+
+/** Waits the scenario latency and applies its connection and random failures */
+export async function simulateNetwork(): Promise<Response | null> {
+  const { latency, failureRate, connectionFails } = getScenario()
   const [min, max] = latency
   if (max > 0) await delay(min + Math.random() * (max - min))
+  if (connectionDown ?? connectionFails) return HttpResponse.error()
   if (failureRate && Math.random() < failureRate) {
     return apiError(503, 'service_unavailable', 'Serviço temporariamente indisponível. Tente novamente.')
   }

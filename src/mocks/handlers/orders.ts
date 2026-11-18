@@ -138,6 +138,19 @@ function maybeChangePrice(userId: string, quoteNftId: string | undefined) {
   publishNftUpdated(nft)
 }
 
+/** Another buyer takes the last copies during the checkout (`edition-sells-out` scenario) */
+function maybeSellOut(item: { nftId: string; editionId: string } | undefined) {
+  if (!getScenario().editionSellsOut || !item) return
+  const nft = getDb().nfts[item.nftId]
+  const edition = findEdition(nft, item.editionId)
+  if (!nft || !edition) return
+  edition.available = 0
+  nft.availableEditions = nft.editions.reduce((sum, e) => sum + e.available, 0)
+  nft.version += 1
+  commit()
+  publishNftUpdated(nft)
+}
+
 export const ordersHandlers = [
   http.post(`${API}/orders`, async ({ request }) => {
     const failure = await simulateNetwork()
@@ -208,6 +221,7 @@ export const ordersHandlers = [
     }
 
     maybeChangePrice(userId, quote.items[0]?.nftId)
+    maybeSellOut(quote.items[0])
 
     // Revalidate price, stock, coupon and fees against the current data
     const fresh = issueQuote(userId)

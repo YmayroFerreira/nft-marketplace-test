@@ -64,9 +64,10 @@ Levantados em 18/11/2026 por busca no código e nos nomes dos testes; confirmar 
 
 - [x] Fixtures com dois usuários (`colecionador@kurio.dev` / `kurio1234` e `curador@kurio.dev` / `kurio5678`).
 - [x] Cenário `order-timeout`: a resposta do pedido criado se perde e a nova tentativa recupera o mesmo pedido.
-- [ ] Cenários do MSW: falha de conexão, respostas fora de ordem e edição esgotada durante a compra.
+- [x] Cenários do MSW: `offline`, `out-of-order` e `edition-sells-out`.
 - [x] Reutilizar a chave de idempotência com conteúdo diferente gera conflito (`idempotency_conflict`).
-- [ ] Tela para rotas inexistentes.
+- [x] Tela para rotas inexistentes.
+- [x] Testes de filtros combinados, busca mobile, skeletons, conflito no cadastro, avatar e troca de senha (`e2e/scenarios.spec.ts`).
 - [x] Testes: troca de usuário e timeout com recuperação do mesmo pedido (`e2e/resilience.spec.ts`).
 - [x] Testes de tempo real pelo `socket.io-client`: preço alterado no carrinho e no checkout, eventos duplicados ou antigos, reconexão, desconexão e retomada de pedido pendente (`e2e/realtime.spec.ts`).
 - [x] Relógio controlado no teste de cotação expirada.

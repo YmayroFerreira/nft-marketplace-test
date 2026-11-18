@@ -1,14 +1,16 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
-import { createRootRouteWithContext, Outlet, useRouterState, useSearch } from '@tanstack/react-router'
+import { createRootRouteWithContext, Link, Outlet, useRouterState, useSearch } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 import { Header } from '@/components/layout/Header'
+import { buttonVariants } from '@/components/ui/button'
 import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { useCart } from '@/features/cart/useCart'
 import { useAuth } from '@/features/auth/auth-context'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { parseAuthTab, type AuthTab } from '@/features/auth/auth-search'
 import { useRealtimeSync } from '@/features/realtime/useRealtimeSync'
+import { usePageMeta } from '@/lib/usePageMeta'
 import { cn } from '@/lib/utils'
 
 // Below the fold on first load, so it does not delay the first paint
@@ -31,7 +33,23 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     auth: parseAuthTab(search.auth),
   }),
   component: RootLayout,
+  notFoundComponent: NotFoundPage,
 })
+
+function NotFoundPage() {
+  usePageMeta('Página não encontrada', 'O endereço acessado não existe na Kurio.')
+  return (
+    <div className="container-page mt-10">
+      <div className="flex flex-col items-center gap-4 rounded-lg bg-surface-card px-6 py-16 text-center">
+        <h1 className="text-2xl font-bold text-foreground">Página não encontrada</h1>
+        <p className="text-base text-text-secondary">O endereço que você acessou não existe ou foi movido.</p>
+        <Link to="/" className={buttonVariants({ size: 'brand-lg' })}>
+          Voltar ao início
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 function RootLayout() {
   return (

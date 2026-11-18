@@ -3,7 +3,7 @@ import type { EthString } from '@/lib/eth'
 import type { EditionId } from '@/types/catalog'
 import type { NftUpdatedEvent, OrderUpdatedEvent } from '@/types/realtime'
 import { commit, getDb } from '../db'
-import { API, apiError, readJson } from '../http-utils'
+import { API, apiError, readJson, setConnectionDown } from '../http-utils'
 import { emitRawEvent, publishNftUpdated, setSocketOffline, socketStatus } from '../realtime'
 import { findEdition } from './cart'
 
@@ -47,4 +47,11 @@ export const controlHandlers = [
   }),
 
   http.get(`${API}/__mock/socket`, () => HttpResponse.json(socketStatus())),
+
+  // Takes the REST API down or brings it back, without reloading the page
+  http.post(`${API}/__mock/network`, async ({ request }) => {
+    const body = await readJson<{ down: boolean }>(request)
+    setConnectionDown(body?.down === true)
+    return HttpResponse.json({ ok: true })
+  }),
 ]

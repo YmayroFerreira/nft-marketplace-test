@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import type {
   CatalogFacets,
   CatalogSort,
@@ -19,6 +19,10 @@ const DEFAULT_PAGE_SIZE = 9
 const MAX_PAGE_SIZE = 36
 const NEW_LISTING_DAYS = 14
 const DAY = 24 * 60 * 60 * 1000
+/** Delay of the first list request in the `out-of-order` scenario */
+const SLOW_FIRST_LIST_MS = 1500
+
+let listRequests = 0
 
 /** Strips detail-only fields so list endpoints return the lighter `Nft` shape */
 export function toListItem(nft: NftDetail): Nft {
@@ -96,6 +100,9 @@ export const catalogHandlers = [
     const failure = (await simulateNetwork()) ?? catalogError()
     if (failure) return failure
 
+    listRequests += 1
+    const answersLate = getScenario().outOfOrder && listRequests === 1
+
     const params = new URL(request.url).searchParams
     const page = Math.max(1, Number(params.get('page')) || 1)
     const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(params.get('pageSize')) || DEFAULT_PAGE_SIZE))
@@ -139,6 +146,7 @@ export const catalogHandlers = [
       totalPages,
       totalItems,
     }
+    if (answersLate) await delay(SLOW_FIRST_LIST_MS)
     return HttpResponse.json(body)
   }),
 
