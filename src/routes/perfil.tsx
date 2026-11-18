@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/lib/usePageMeta'
 import { useState, type FormEvent } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { AccountLayout } from '@/components/account/AccountLayout'
@@ -15,9 +16,10 @@ export const Route = createFileRoute('/perfil')({
 })
 
 /** Avatars come from the marketplace artworks (the mock API has no file upload) */
-const AVATAR_OPTIONS = ['/nfts/emerald-ape.png', '/nfts/sage-nomad.png', '/nfts/neon-vessel.png', '/nfts/golden-beat.png']
+const AVATAR_OPTIONS = ['/nfts/emerald-ape-480.webp', '/nfts/sage-nomad-480.webp', '/nfts/neon-vessel-480.webp', '/nfts/golden-beat-480.webp']
 
 function ProfilePage() {
+  usePageMeta('Perfil do colecionador', 'Edite seus dados, avatar e senha.')
   return (
     <div className="container-page mt-6 md:mt-10">
       <RequireAuth message="Entre para ver e editar seu perfil de colecionador.">
@@ -128,7 +130,7 @@ function ProfileForm({ profile }: { profile: Profile }) {
                 checked={values.avatarUrl === src}
                 onChange={() => set('avatarUrl', src)}
               />
-              <img src={src} alt={`Avatar ${src.split('/').pop()?.replace('.png', '')}`} width={56} height={56} loading="lazy" className="size-14 rounded-full object-cover" />
+              <img src={src} alt={`Avatar ${src.split('/').pop()?.replace('-480.webp', '')}`} width={56} height={56} loading="lazy" className="size-14 rounded-full object-cover" />
             </label>
           ))}
           <Button type="button" size="brand-sm" variant="outline" onClick={() => set('avatarUrl', null)} disabled={!values.avatarUrl}>

@@ -1,5 +1,8 @@
+import { memo } from 'react'
+import { responsiveImage } from '@/lib/images'
 import { Link } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
+import { MD_UP, useMediaQuery } from '@/lib/useMediaQuery'
 import { formatEth } from '@/lib/format'
 import cartIcon from '@/assets/icons/cart-small.svg'
 import heartIcon from '@/assets/icons/heart.svg'
@@ -17,7 +20,10 @@ interface NftCardProps {
 const actionClass =
   'grid size-[35px] place-items-center rounded-[4px] border border-border bg-[#2f1d15] transition-colors hover:border-border-soft hover:bg-surface-dark'
 
-export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite }: NftCardProps) {
+/** Memoized: catalog data arriving elsewhere on the page does not re-render every card */
+export const NftCard = memo(function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite }: NftCardProps) {
+  const isDesktop = useMediaQuery(MD_UP)
+
   return (
     <article className="group relative flex flex-col gap-2 md:gap-3">
       {/* Mobile: rounded gradient card from "Mobile / Início"; md+: flat desktop card */}
@@ -29,7 +35,7 @@ export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite
           aria-label={`${nft.name}, ${formatEth(nft.price)}`}
         >
           <img
-            src={nft.imageUrl}
+            {...responsiveImage(nft.imageUrl, '(min-width: 768px) 258px, 50vw')}
             alt=""
             width={250}
             height={250}
@@ -45,57 +51,59 @@ export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite
           </span>
         )}
 
-        {/* Mobile: favorite badge on the artwork */}
-        <button
-          type="button"
-          onClick={() => onToggleFavorite?.(nft)}
-          aria-label={isFavorite ? `Remover ${nft.name} dos favoritos` : `Favoritar ${nft.name}`}
-          aria-pressed={isFavorite}
-          className="absolute top-5 right-3 rounded-full md:hidden"
-        >
-          <img
-            src={heartBadgeIcon}
-            alt=""
-            width={28}
-            height={28}
-            className={cn('transition-opacity', !isFavorite && 'opacity-70')}
-          />
-        </button>
-
-        {/* Desktop hover actions from the design; always visible on touch screens */}
-        <div
-          className={cn(
-            'absolute bottom-[7px] left-1/2 hidden -translate-x-1/2 gap-2.5 transition-opacity md:flex',
-            'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
-            'motion-reduce:transition-none',
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => onAddToCart?.(nft)}
-            aria-label={`Adicionar ${nft.name} ao carrinho`}
-            className={actionClass}
+        {isDesktop ? (
+          // Hover actions from the design; always visible on touch screens
+          <div
+            className={cn(
+              'absolute bottom-[7px] left-1/2 flex -translate-x-1/2 gap-2.5 transition-opacity',
+              'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
+              'motion-reduce:transition-none',
+            )}
           >
-            <img src={cartIcon} alt="" width={20} height={20} />
-          </button>
+            <button
+              type="button"
+              onClick={() => onAddToCart?.(nft)}
+              aria-label={`Adicionar ${nft.name} ao carrinho`}
+              className={actionClass}
+            >
+              <img src={cartIcon} alt="" width={20} height={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleFavorite?.(nft)}
+              aria-label={isFavorite ? `Remover ${nft.name} dos favoritos` : `Favoritar ${nft.name}`}
+              aria-pressed={isFavorite}
+              className={cn(actionClass, isFavorite && 'border-primary bg-primary/30')}
+            >
+              <img src={heartIcon} alt="" width={20} height={20} />
+            </button>
+            <Link
+              to="/nft/$nftId"
+              params={{ nftId: nft.id }}
+              aria-label={`Ver detalhes de ${nft.name}`}
+              className={actionClass}
+            >
+              <img src={zoomIcon} alt="" width={20} height={20} />
+            </Link>
+          </div>
+        ) : (
+          // Mobile: favorite badge on the artwork
           <button
             type="button"
             onClick={() => onToggleFavorite?.(nft)}
             aria-label={isFavorite ? `Remover ${nft.name} dos favoritos` : `Favoritar ${nft.name}`}
             aria-pressed={isFavorite}
-            className={cn(actionClass, isFavorite && 'border-primary bg-primary/30')}
+            className="absolute top-5 right-3 rounded-full"
           >
-            <img src={heartIcon} alt="" width={20} height={20} />
+            <img
+              src={heartBadgeIcon}
+              alt=""
+              width={28}
+              height={28}
+              className={cn('transition-opacity', !isFavorite && 'opacity-70')}
+            />
           </button>
-          <Link
-            to="/nft/$nftId"
-            params={{ nftId: nft.id }}
-            aria-label={`Ver detalhes de ${nft.name}`}
-            className={actionClass}
-          >
-            <img src={zoomIcon} alt="" width={20} height={20} />
-          </Link>
-        </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-0.5 pl-2 leading-4 md:gap-1.5 md:pl-0">
@@ -112,7 +120,7 @@ export function NftCard({ nft, isFavorite = false, onAddToCart, onToggleFavorite
       </div>
     </article>
   )
-}
+})
 
 export function NftCardSkeleton() {
   return (

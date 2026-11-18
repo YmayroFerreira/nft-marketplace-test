@@ -93,27 +93,32 @@
   }
 }
 
+/* The highlight moves with transform, so skeletons are not repainted every frame */
 @utility skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--skeleton-base) 25%,
-    var(--skeleton-highlight) 50%,
-    var(--skeleton-base) 75%
-  );
-  background-size: 200% 100%;
-  animation: kurio-shimmer 1.4s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--skeleton-highlight), transparent);
+    transform: translateX(-100%);
+    animation: kurio-shimmer 1.4s ease-in-out infinite;
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    background: var(--skeleton-base);
+    &::after {
+      display: none;
+      animation: none;
+    }
   }
 }
 
 @keyframes kurio-shimmer {
-  from {
-    background-position: 200% 0;
-  }
   to {
-    background-position: -200% 0;
+    transform: translateX(100%);
   }
 }
+

@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/lib/usePageMeta'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
@@ -30,6 +31,7 @@ const PHONE_PATTERN = /^[0-9+()\s-]{8,20}$/
 const NETWORKS = Object.keys(NETWORK_LABELS) as Network[]
 
 function CheckoutPage() {
+  usePageMeta('Pagamento', 'Escolha sua carteira e rede, revise o pedido e confirme a compra.')
   return (
     <div className="container-page mt-4 flex flex-col gap-6 md:mt-8">
       <div className="hidden md:block">

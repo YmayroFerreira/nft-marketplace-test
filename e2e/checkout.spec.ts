@@ -18,6 +18,7 @@ test.describe('Carrinho do visitante', () => {
 
     // Checkout needs an account: sign in, the cart is merged, and checkout continues
     await page.getByRole('button', { name: 'Entrar e finalizar' }).click()
+    await expect(page).toHaveURL(/auth=/)
     await signIn(page)
     await expect(page).toHaveURL(/\/pagamento/)
     await expect(page.getByText('Os itens do seu carrinho foram adicionados à sua conta.')).toBeVisible()

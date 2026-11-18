@@ -25,8 +25,9 @@ export function isMobile(page: Page) {
 /** Signs in through the auth dialog, like a user */
 export async function signIn(page: Page, email = DEMO_USER.email, password = DEMO_USER.password) {
   const dialog = page.getByRole('dialog')
-  if (!(await dialog.isVisible())) {
-    const url = new URL(page.url())
+  const url = new URL(page.url())
+  // The dialog code loads on demand: when the URL already opens it, just wait
+  if (!url.searchParams.has('auth') && !(await dialog.isVisible())) {
     url.searchParams.set('auth', 'entrar')
     await page.goto(url.pathname + url.search)
   }

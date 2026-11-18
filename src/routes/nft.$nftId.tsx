@@ -1,3 +1,5 @@
+import { NFT_DETAIL_IMAGE_SIZES, preloadImage, responsiveImage, smallImage } from '@/lib/images'
+import { usePageMeta } from '@/lib/usePageMeta'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -22,12 +24,22 @@ import { BackButton } from '@/components/layout/MobilePageHeader'
 import type { EditionId, NftDetail } from '@/types/catalog'
 
 export const Route = createFileRoute('/nft/$nftId')({
+  // Starts the request while the page code loads, and the artwork as soon as the data
+  // arrives. Nothing here blocks the page, which is also what shows any error.
+  loader: ({ context: { queryClient }, params }) => {
+    const query = catalogQueries.detail(params.nftId)
+    void queryClient.prefetchQuery({ ...query, retry: queryClient.getDefaultOptions().queries?.retry }).then(() => {
+      const nft = queryClient.getQueryData(query.queryKey)
+      if (nft) preloadImage(responsiveImage(nft.gallery[0] ?? nft.imageUrl, NFT_DETAIL_IMAGE_SIZES))
+    })
+  },
   component: NftDetailsPage,
 })
 
 function NftDetailsPage() {
   const { nftId } = Route.useParams()
   const nft = useQuery(catalogQueries.detail(nftId))
+  usePageMeta(nft.data?.name ?? 'NFT', nft.data?.summary ?? 'Detalhes, edições e preço deste NFT na Kurio.')
 
   return (
     // Mobile: bottom padding keeps the content clear of the fixed buy bar
@@ -129,14 +141,14 @@ function Overview({ nft }: { nft: NftDetail }) {
                   index === imageIndex ? 'border-primary' : 'border-transparent',
                 )}
               >
-                <img src={src} alt="" width={72} height={72} loading="lazy" className="size-16 rounded object-cover sm:size-[72px]" />
+                <img src={smallImage(src)} alt="" width={72} height={72} loading="lazy" className="size-16 rounded object-cover sm:size-[72px]" />
               </button>
             </li>
           ))}
         </ul>
         <div className="relative flex-1 md:bg-surface-card md:p-4">
           <img
-            src={image}
+            {...responsiveImage(image, NFT_DETAIL_IMAGE_SIZES)}
             alt={nft.name}
             width={560}
             height={560}

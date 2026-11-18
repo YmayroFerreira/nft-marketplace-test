@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/lib/usePageMeta'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Breadcrumbs } from '@/components/common/Breadcrumbs'
 import { ErrorState } from '@/components/common/ErrorState'
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/favoritos')({
 })
 
 function FavoritesPage() {
+  usePageMeta('Lista de interesse', 'Os NFTs que você favoritou na Kurio.')
   return (
     <div className="container-page mt-6 flex flex-col gap-6 md:mt-8">
       <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Favoritos' }]} />

@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/lib/usePageMeta'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { ErrorState } from '@/components/common/ErrorState'
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/pedido/$orderId')({
 })
 
 function OrderConfirmationPage() {
+  usePageMeta('Pedido', 'Acompanhe o status e o recibo do seu pedido.')
   return (
     <div className="container-page mt-6 flex justify-center md:mt-10">
       <RequireAuth message="Entre para acompanhar o seu pedido.">

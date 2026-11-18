@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/lib/usePageMeta'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/explorador/tx/$hash')({
  * says clearly that it is a demo.
  */
 function ExplorerPage() {
+  usePageMeta('Explorador simulado', 'Detalhes simulados de uma transação na Kurio.')
   const { hash } = Route.useParams()
   const tx = useQuery({ queryKey: ['explorer', hash], queryFn: () => explorerApi.transaction(hash) })
 

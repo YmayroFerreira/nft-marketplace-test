@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
-import { getRealtimeSocket } from '@/api/realtime'
 import type { Cart, Order } from '@/types/account'
 import type { Nft, NftDetail, Paginated } from '@/types/catalog'
 import type { NftUpdatedEvent, OrderUpdatedEvent } from '@/types/realtime'
@@ -66,7 +65,6 @@ export function useRealtimeSync() {
   const userId = user?.id ?? null
 
   useEffect(() => {
-    const socket = getRealtimeSocket()
     const seen = new Set<string>()
     const isDuplicate = (eventId: string) => {
       if (seen.has(eventId)) return true
@@ -84,13 +82,24 @@ export function useRealtimeSync() {
     // After a reconnection, refetch what may have changed while offline
     const onReconnect = () => void queryClient.invalidateQueries({ queryKey: catalogKeys.all })
 
-    socket.on('nft.updated', onNft)
-    socket.on('order.updated', onOrder)
-    socket.io.on('reconnect', onReconnect)
+    // Socket.IO is loaded on demand so it does not delay the first render
+    let isActive = true
+    let unsubscribe: (() => void) | undefined
+    void import('@/api/realtime').then(({ getRealtimeSocket }) => {
+      if (!isActive) return
+      const socket = getRealtimeSocket()
+      socket.on('nft.updated', onNft)
+      socket.on('order.updated', onOrder)
+      socket.io.on('reconnect', onReconnect)
+      unsubscribe = () => {
+        socket.off('nft.updated', onNft)
+        socket.off('order.updated', onOrder)
+        socket.io.off('reconnect', onReconnect)
+      }
+    })
     return () => {
-      socket.off('nft.updated', onNft)
-      socket.off('order.updated', onOrder)
-      socket.io.off('reconnect', onReconnect)
+      isActive = false
+      unsubscribe?.()
     }
   }, [queryClient, userId])
 }

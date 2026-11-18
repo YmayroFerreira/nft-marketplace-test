@@ -2,6 +2,7 @@ import { Pagination } from '@/components/common/Pagination'
 import { NftCard, NftCardSkeleton } from '@/components/nft/NftCard'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { LG_UP, useMediaQuery } from '@/lib/useMediaQuery'
 import { CatalogToolbar } from './CatalogToolbar'
 import { FeaturedNftBanner } from './FeaturedNftBanner'
 import { FiltersSidebar, type CatalogFilters } from './FiltersSidebar'
@@ -67,6 +68,7 @@ export function CatalogSection({
   onFiltersDrawerOpenChange,
 }: CatalogSectionProps) {
   const isEmpty = !isLoading && !errorMessage && nfts.length === 0
+  const isLargeScreen = useMediaQuery(LG_UP)
 
   return (
     <section
@@ -98,25 +100,27 @@ export function CatalogSection({
         Catálogo de NFTs
       </h2>
 
-      {/* Below lg the sidebar is hidden; filters open in the drawer above */}
-      <aside className="hidden w-[310px] shrink-0 flex-col gap-6 lg:flex">
-        {facets ? (
-          <FiltersSidebar
+      {/* Below lg there is no sidebar; filters open in the drawer above */}
+      {isLargeScreen && (
+        <aside className="flex w-[310px] shrink-0 flex-col gap-6">
+          {facets ? (
+            <FiltersSidebar
               // Re-mounts when the price in the URL changes (Back/Forward), resetting the slider draft
               key={`${filters.price?.min ?? ''}-${filters.price?.max ?? ''}`}
               facets={facets}
               value={filters}
               onChange={onFiltersChange}
             />
-        ) : (
-          <FiltersSkeleton />
-        )}
-        {featuredNft ? (
-          <FeaturedNftBanner nft={featuredNft} />
-        ) : (
-          <div aria-hidden className="skeleton-shimmer h-[470px]" />
-        )}
-      </aside>
+          ) : (
+            <FiltersSkeleton />
+          )}
+          {featuredNft ? (
+            <FeaturedNftBanner nft={featuredNft} />
+          ) : (
+            <div aria-hidden className="skeleton-shimmer h-[470px]" />
+          )}
+        </aside>
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col items-end gap-14 md:gap-[88px]">
         <div className="flex w-full flex-col gap-4 md:gap-8">

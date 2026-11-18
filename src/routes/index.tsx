@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { usePageMeta } from '@/lib/usePageMeta'
+import { lazy, Suspense, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { MobileSearchBar } from '@/components/home/MobileSearchBar'
 import { BlogSection } from '@/components/home/BlogSection'
-import { CatalogSection } from '@/components/home/CatalogSection'
 import type { CatalogFilters } from '@/components/home/FiltersSidebar'
 import { Hero } from '@/components/home/Hero'
 import { PromoSection } from '@/components/home/PromoSection'
@@ -10,7 +10,13 @@ import { useNftCardActions } from '@/features/catalog/useNftCardActions'
 import { useQuery } from '@tanstack/react-query'
 import { catalogQueries, contentQueries } from '@/features/catalog/queries'
 import { isEthString, type EthString } from '@/lib/eth'
+import { LG_UP, useMediaQuery } from '@/lib/useMediaQuery'
 import type { CatalogQuery, CatalogSort, CatalogTab, Network } from '@/types/catalog'
+
+// The filters bring heavy UI primitives; loading them apart lets the hero paint first
+const CatalogSection = lazy(() =>
+  import('@/components/home/CatalogSection').then((module) => ({ default: module.CatalogSection })),
+)
 
 const TABS: CatalogTab[] = ['all', 'new', 'trending']
 const SORTS: CatalogSort[] = ['recent', 'price-asc', 'price-desc']
@@ -71,9 +77,11 @@ export const Route = createFileRoute('/')({
 const CATALOG_ID = 'catalogo'
 
 function HomePage() {
+  usePageMeta('Marketplace de NFTs', 'Descubra, colecione e compre NFTs de criadores emergentes e consagrados na Kurio.')
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const [isFiltersDrawerOpen, setFiltersDrawerOpen] = useState(false)
+  const isLargeScreen = useMediaQuery(LG_UP)
 
   const filters: CatalogFilters = {
     collections: search.collections ?? [],
@@ -96,9 +104,8 @@ function HomePage() {
   }
   const catalog = useQuery(catalogQueries.list(catalogQuery))
   const facets = useQuery(catalogQueries.facets())
-  const featured = useQuery(catalogQueries.featured())
-  const promos = useQuery(contentQueries.promos())
-  const blogPosts = useQuery(contentQueries.blogPosts())
+  // The featured banner is part of the sidebar, which only exists on large screens
+  const featured = useQuery({ ...catalogQueries.featured(), enabled: isLargeScreen })
   const cardActions = useNftCardActions()
 
   /**
@@ -124,61 +131,75 @@ function HomePage() {
 
       <Hero
         image={{
-          src: '/nfts/emerald-ape.png',
+          src: '/nfts/emerald-ape.webp',
           alt: 'Emerald Ape, macaco de óculos escuros e jaqueta verde',
         }}
         secondaryImage={{
-          src: '/nfts/sage-nomad.png',
+          src: '/nfts/sage-nomad.webp',
           alt: 'Sage Nomad, gorila de chapéu e moletom roxo',
         }}
         exploreTargetId={CATALOG_ID}
       />
 
-      <CatalogSection
-        id={CATALOG_ID}
-        nfts={catalog.data?.items ?? []}
-        isLoading={catalog.isPending}
-        errorMessage={catalog.isError ? catalog.error.message : undefined}
-        onRetry={() => void catalog.refetch()}
-        featuredNft={featured.data}
-        facets={facets.data}
-        filters={filters}
-        tab={search.tab ?? 'all'}
-        sort={search.sort ?? 'recent'}
-        page={search.page ?? 1}
-        totalPages={catalog.data?.totalPages ?? 1}
-        query={search.q}
-        onClearQuery={() => updateSearch({ q: undefined })}
-        onClearFilters={() =>
-          updateSearch({
-            collections: undefined,
-            networks: undefined,
-            minPrice: undefined,
-            maxPrice: undefined,
-            q: undefined,
-            tab: undefined,
-          })
-        }
-        onFiltersChange={(next) =>
-          updateSearch({
-            collections: next.collections.length ? next.collections : undefined,
-            networks: next.networks.length ? next.networks : undefined,
-            minPrice: next.price?.min,
-            maxPrice: next.price?.max,
-          })
-        }
-        onTabChange={(tab) => updateSearch({ tab: tab === 'all' ? undefined : tab })}
-        onSortChange={(sort) => updateSearch({ sort: sort === 'recent' ? undefined : sort })}
-        onPageChange={(page) => updateSearch({ page: page > 1 ? page : undefined }, true)}
-        // Both actions need a session: without one, the auth dialog opens and the
-        // action runs after sign-in
-        favoriteIds={cardActions.favoriteIds}
-        onAddToCart={cardActions.onAddToCart}
-        onToggleFavorite={cardActions.onToggleFavorite}
-        isFiltersDrawerOpen={isFiltersDrawerOpen}
-        onFiltersDrawerOpenChange={setFiltersDrawerOpen}
-      />
+      <Suspense fallback={<div id={CATALOG_ID} aria-busy className="min-h-dvh" />}>
+        <CatalogSection
+          id={CATALOG_ID}
+          nfts={catalog.data?.items ?? []}
+          isLoading={catalog.isPending}
+          errorMessage={catalog.isError ? catalog.error.message : undefined}
+          onRetry={() => void catalog.refetch()}
+          featuredNft={featured.data}
+          facets={facets.data}
+          filters={filters}
+          tab={search.tab ?? 'all'}
+          sort={search.sort ?? 'recent'}
+          page={search.page ?? 1}
+          totalPages={catalog.data?.totalPages ?? 1}
+          query={search.q}
+          onClearQuery={() => updateSearch({ q: undefined })}
+          onClearFilters={() =>
+            updateSearch({
+              collections: undefined,
+              networks: undefined,
+              minPrice: undefined,
+              maxPrice: undefined,
+              q: undefined,
+              tab: undefined,
+            })
+          }
+          onFiltersChange={(next) =>
+            updateSearch({
+              collections: next.collections.length ? next.collections : undefined,
+              networks: next.networks.length ? next.networks : undefined,
+              minPrice: next.price?.min,
+              maxPrice: next.price?.max,
+            })
+          }
+          onTabChange={(tab) => updateSearch({ tab: tab === 'all' ? undefined : tab })}
+          onSortChange={(sort) => updateSearch({ sort: sort === 'recent' ? undefined : sort })}
+          onPageChange={(page) => updateSearch({ page: page > 1 ? page : undefined }, true)}
+          // Both actions need a session: without one, the auth dialog opens and the
+          // action runs after sign-in
+          favoriteIds={cardActions.favoriteIds}
+          onAddToCart={cardActions.onAddToCart}
+          onToggleFavorite={cardActions.onToggleFavorite}
+          isFiltersDrawerOpen={isFiltersDrawerOpen}
+          onFiltersDrawerOpenChange={setFiltersDrawerOpen}
+        />
+      </Suspense>
 
+      <EditorialSections />
+    </>
+  )
+}
+
+/** Has its own queries so that their responses do not re-render the catalog */
+function EditorialSections() {
+  const promos = useQuery(contentQueries.promos())
+  const blogPosts = useQuery(contentQueries.blogPosts())
+
+  return (
+    <>
       {promos.data && <PromoSection promos={promos.data} />}
       {blogPosts.data && <BlogSection posts={blogPosts.data} />}
     </>

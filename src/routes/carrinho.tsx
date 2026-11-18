@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/lib/usePageMeta'
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/carrinho')({
 })
 
 function CartPage() {
+  usePageMeta('Carrinho', 'Revise os NFTs do seu carrinho, aplique cupons e finalize a compra.')
   return (
     <div className="container-page mt-4 flex flex-col gap-6 md:mt-8">
       <div className="hidden md:block">

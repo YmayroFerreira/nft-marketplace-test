@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/lib/usePageMeta'
 import { useId, useState, type FormEvent } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/carteiras')({
 })
 
 function WalletsPage() {
+  usePageMeta('Carteiras', 'Gerencie as carteiras que pagam e recebem seus NFTs.')
   return (
     <div className="container-page mt-6 md:mt-10">
       <RequireAuth message="Entre para gerenciar as carteiras que recebem seus NFTs.">

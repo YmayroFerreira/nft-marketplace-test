@@ -8,18 +8,18 @@ Pendências e decisões para revisar antes da entrega.
 
 ## Pendências conhecidas
 
-- [ ] Converter as artes em `public/nfts/` (PNG ~2 MB cada) para WebP menores antes da auditoria do Lighthouse.
+- [x] Artes de `public/nfts/` convertidas para WebP em duas larguras (960 e 480 px).
 - [ ] Páginas sem destino ainda: Mercado, Criadores, Aprenda, artigos do blog e a maioria dos links do rodapé.
-- [ ] Contador do carrinho no Header está fixo; ligar à API do carrinho.
+- [x] Contador do carrinho no Header ligado à API do carrinho.
 
 ## API simulada (MSW)
 
 - [ ] Documentar no `ARCHITECTURE.md`: contratos REST, eventos `nft.updated`/`order.updated`, política de sessão, cache/retry e reconciliação REST × Socket.IO.
 - [ ] Documentar no `README.md`: credenciais fictícias (`colecionador@kurio.dev` / `kurio1234`), cupons (`KURIO10`, `GENESIS`), cenários (`?scenario=`) e reset (`?mockReset`).
 - [ ] Limitações do MSW para documentar: o binding de Socket.IO só suporta WebSocket (sem polling), não envia pings (o mock envia), sem namespaces/rooms; dados do mock ficam no `localStorage` de cada navegador; pedidos interrompidos por reload continuam quando a página volta.
-- [ ] O chunk do mock (~478 KB) carrega antes do app; avaliar impacto no Lighthouse da build de demonstração.
+- [x] Chunk do mock reduzido de ~170 KB para ~60 KB (gzip), trocando a lista de domínios do `tldts` por um shim (`src/mocks/shims/tldts.ts`).
 - [x] Ligar à API: detalhe do NFT, carrinho, pagamento, confirmação, perfil, carteiras, favoritos, login e newsletter.
-- [ ] Documentar: o app só é importado depois que o MSW inicia, porque o engine.io-client guarda o `WebSocket` global ao carregar (ver `src/main.tsx`).
+- [ ] Documentar: o `socket.io-client` só é importado depois do primeiro render, quando o MSW já substituiu o `WebSocket`, porque o engine.io-client guarda o `WebSocket` global ao carregar (ver `src/main.tsx` e `useRealtimeSync`).
 
 ## Telas
 
@@ -51,6 +51,28 @@ Pendências e decisões para revisar antes da entrega.
 - [x] Playwright: E2E (catálogo, auth, compra, favoritos, perfil, carteiras, acessibilidade) em Chromium desktop e mobile, relatório HTML, traces/vídeos em falhas.
 - [x] Regressão visual com baselines versionadas em `e2e/__screenshots__` (cenário `stable`).
 - [ ] Rodar os testes num CI (GitHub Actions) para provar que passam num checkout limpo.
+
+## Lighthouse
+
+- [x] Auditoria de Início e Detalhe, em mobile e desktop, no build de produção e no cenário padrão: 3 medições, mediana e relatórios em `lighthouse/reports/` (`npm run audit`).
+- [x] Metas atingidas: Performance 92/92 no mobile e 99/99 no desktop; Acessibilidade, Boas práticas e SEO em 100.
+- [ ] Documentar a análise no `ARCHITECTURE.md`: condições da medição (Chromium sem GPU, uma execução de aquecimento descartada), causas do LCP e o fato de o Lighthouse mostrar 0 KB nas requisições que passam pelo Service Worker do MSW (imagens e API), que por isso não pesam na simulação.
+
+## Requisitos do desafio a confirmar ou completar
+
+Levantados em 18/11/2026 por busca no código e nos nomes dos testes; confirmar cada item antes de implementar.
+
+- [ ] Fixtures com pelo menos dois usuários.
+- [ ] Cenários do MSW: falha de conexão, timeout após criar o pedido com recuperação por idempotência, respostas fora de ordem e edição esgotada durante a compra.
+- [ ] Reutilizar a chave de idempotência com conteúdo diferente deve gerar conflito.
+- [ ] Tela para rotas inexistentes.
+- [ ] Testes: troca de usuário, timeout com recuperação do mesmo pedido, preço alterado via Socket.IO no checkout, eventos duplicados ou antigos, desconexão e retomada de pedido pendente, e controle do relógio nos cenários sensíveis a tempo.
+
+## Entrega (nesta ordem)
+
+- [ ] Completar os requisitos acima.
+- [ ] Escrever `README.md` e `ARCHITECTURE.md`.
+- [ ] Deploy, por último.
 
 ## Desvios do Figma para documentar no `ARCHITECTURE.md`
 

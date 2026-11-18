@@ -70,6 +70,7 @@ export function FiltersSidebar({ facets, value, onChange, className }: FiltersSi
           <div className="flex flex-col gap-3 pl-3">
             <Slider
               aria-label="Faixa de preço em ETH"
+              getThumbLabel={(index) => (index === 0 ? 'Preço mínimo em ETH' : 'Preço máximo em ETH')}
               min={toCents(bounds.min, 'down')}
               max={toCents(bounds.max, 'up')}
               step={1}

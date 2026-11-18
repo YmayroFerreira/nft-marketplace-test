@@ -1,5 +1,7 @@
+import { responsiveImage } from '@/lib/images'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { MD_UP, useMediaQuery } from '@/lib/useMediaQuery'
 import heroDots from '@/assets/decor/hero-dots.svg'
 import mobileHeroBg from '@/assets/decor/mobile-hero-bg.svg'
 import mobileHeroDots from '@/assets/decor/mobile-hero-dots.svg'
@@ -19,17 +21,21 @@ interface HeroProps {
 }
 
 export function Hero({ image, secondaryImage, exploreTargetId }: HeroProps) {
+  const isDesktop = useMediaQuery(MD_UP)
   return (
     <section aria-label="Destaque principal">
-      <DesktopHero image={image} exploreTargetId={exploreTargetId} />
-      <MobileHero image={image} secondaryImage={secondaryImage} exploreTargetId={exploreTargetId} />
+      {isDesktop ? (
+        <DesktopHero image={image} exploreTargetId={exploreTargetId} />
+      ) : (
+        <MobileHero image={image} secondaryImage={secondaryImage} exploreTargetId={exploreTargetId} />
+      )}
     </section>
   )
 }
 
 function DesktopHero({ image, exploreTargetId }: Omit<HeroProps, 'secondaryImage'>) {
   return (
-    <div className="container-page mt-8 hidden md:block">
+    <div className="container-page mt-8">
       <div className="flex items-center justify-between gap-8 pl-10">
         <div className="flex w-full max-w-[600px] flex-col items-end gap-11">
           <div className="flex w-full flex-col gap-8">
@@ -58,7 +64,7 @@ function DesktopHero({ image, exploreTargetId }: Omit<HeroProps, 'secondaryImage
         </div>
 
         <img
-          src={image.src}
+          {...responsiveImage(image.src, '450px')}
           alt={image.alt}
           width={450}
           height={450}
@@ -74,7 +80,7 @@ function DesktopHero({ image, exploreTargetId }: Omit<HeroProps, 'secondaryImage
 /** Compact banner from the "Mobile / Início" frame */
 function MobileHero({ image, secondaryImage, exploreTargetId }: HeroProps) {
   return (
-    <div className="container-page mt-4 md:hidden">
+    <div className="container-page mt-4">
       <div className="relative overflow-hidden rounded-[30px] p-4">
         <img
           src={mobileHeroBg}
@@ -86,7 +92,6 @@ function MobileHero({ image, secondaryImage, exploreTargetId }: HeroProps) {
           <div className="flex w-full items-center gap-2">
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <p className="text-xs leading-4 font-medium text-foreground">Bem-vindo à Kurio</p>
-              {/* Only one of the two hero headings is displayed at a time */}
               <h1 className="text-lg leading-[29px] font-bold text-foreground uppercase">
                 Seja dono da <br />
                 cultura digital
@@ -104,7 +109,7 @@ function MobileHero({ image, secondaryImage, exploreTargetId }: HeroProps) {
             </div>
             <div className="relative shrink-0">
               <img
-                src={image.src}
+                {...responsiveImage(image.src, '138px')}
                 alt={image.alt}
                 width={138}
                 height={138}
@@ -113,7 +118,7 @@ function MobileHero({ image, secondaryImage, exploreTargetId }: HeroProps) {
                 className="size-[138px] rounded-2xl object-cover"
               />
               <img
-                src={secondaryImage.src}
+                {...responsiveImage(secondaryImage.src, '58px')}
                 alt={secondaryImage.alt}
                 width={58}
                 height={58}

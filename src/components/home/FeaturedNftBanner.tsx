@@ -1,3 +1,4 @@
+import { responsiveImage } from '@/lib/images'
 import { Link } from '@tanstack/react-router'
 import type { Nft } from '@/types/catalog'
 
@@ -22,7 +23,7 @@ export function FeaturedNftBanner({ nft }: FeaturedNftBannerProps) {
         </div>
         <Link to="/nft/$nftId" params={{ nftId: nft.id }} className="block rounded-[22px]">
           <img
-            src={nft.imageUrl}
+            {...responsiveImage(nft.imageUrl, '310px')}
             alt={nft.name}
             width={310}
             height={368}

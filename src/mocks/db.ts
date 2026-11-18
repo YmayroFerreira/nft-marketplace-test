@@ -13,7 +13,7 @@ import type { PasswordHash } from './password'
  */
 
 /** Bump the version when the stored shape changes, so old data is discarded */
-const STORAGE_KEY = 'kurio.mock.db.v3'
+const STORAGE_KEY = 'kurio.mock.db.v4'
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 
 export interface StoredUser extends User {

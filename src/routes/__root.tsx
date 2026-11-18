@@ -1,16 +1,21 @@
+import { lazy, Suspense, useEffect, useState } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
-import { createRootRouteWithContext, Outlet, useRouterState } from '@tanstack/react-router'
+import { createRootRouteWithContext, Outlet, useRouterState, useSearch } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
-import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
 import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { useCart } from '@/features/cart/useCart'
 import { useAuth } from '@/features/auth/auth-context'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { parseAuthTab, type AuthTab } from '@/features/auth/auth-search'
-import { AuthDialog } from '@/features/auth/components/AuthDialog'
 import { useRealtimeSync } from '@/features/realtime/useRealtimeSync'
 import { cn } from '@/lib/utils'
+
+// Below the fold on first load, so it does not delay the first paint
+const Footer = lazy(() => import('@/components/layout/Footer').then((module) => ({ default: module.Footer })))
+
+const loadAuthDialog = () => import('@/features/auth/components/AuthDialog')
+const AuthDialog = lazy(() => loadAuthDialog().then((module) => ({ default: module.AuthDialog })))
 
 interface RouterContext {
   queryClient: QueryClient
@@ -33,6 +38,44 @@ function RootLayout() {
     <AuthProvider>
       <AppShell />
     </AuthProvider>
+  )
+}
+
+/** Reserves the real height of the footer at each breakpoint, so the page does not jump */
+function FooterPlaceholder() {
+  return (
+    <div
+      aria-hidden
+      className="mt-16 min-h-[2060px] sm:min-h-[1520px] md:mt-24 md:min-h-[1120px] lg:min-h-[910px] xl:min-h-[660px]"
+    />
+  )
+}
+
+/**
+ * Keeps the dialog out of the first load: its code is fetched when the browser
+ * is idle, so it still opens right away, and it stays mounted once opened for
+ * the closing animation.
+ */
+function AuthDialogLoader() {
+  const { auth } = useSearch({ strict: false })
+  const [hasOpened, setHasOpened] = useState(false)
+
+  useEffect(() => {
+    const preload = () => void loadAuthDialog()
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(preload)
+      return () => cancelIdleCallback(id)
+    }
+    const id = setTimeout(preload, 2000)
+    return () => clearTimeout(id)
+  }, [])
+
+  if (auth !== undefined && !hasOpened) setHasOpened(true)
+  if (!hasOpened) return null
+  return (
+    <Suspense fallback={null}>
+      <AuthDialog />
+    </Suspense>
   )
 }
 
@@ -59,10 +102,12 @@ function AppShell() {
         <main id="conteudo" className="flex-1">
           <Outlet />
         </main>
-        <Footer />
+        <Suspense fallback={<FooterPlaceholder />}>
+          <Footer />
+        </Suspense>
       </div>
       {showTabBar && <MobileTabBar cartCount={cartCount} />}
-      <AuthDialog />
+      <AuthDialogLoader />
       <Toaster
         theme="dark"
         position="top-center"

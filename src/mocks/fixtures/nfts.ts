@@ -28,10 +28,10 @@ export const NETWORKS: { id: Network; name: string }[] = [
 ]
 
 const ART = {
-  emeraldApe: '/nfts/emerald-ape.png',
-  sageNomad: '/nfts/sage-nomad.png',
-  neonVessel: '/nfts/neon-vessel.png',
-  goldenBeat: '/nfts/golden-beat.png',
+  emeraldApe: '/nfts/emerald-ape.webp',
+  sageNomad: '/nfts/sage-nomad.webp',
+  neonVessel: '/nfts/neon-vessel.webp',
+  goldenBeat: '/nfts/golden-beat.webp',
 }
 
 interface SeedNft {

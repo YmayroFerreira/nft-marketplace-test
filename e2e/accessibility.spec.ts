@@ -70,6 +70,6 @@ test.describe('Responsividade e acessibilidade', () => {
     await gotoStable(page, '/', 'slow')
     const skeleton = page.locator('.skeleton-shimmer:visible').first()
     await expect(skeleton).toBeVisible()
-    expect(await skeleton.evaluate((el) => getComputedStyle(el).animationName)).toBe('none')
+    expect(await skeleton.evaluate((el) => getComputedStyle(el, '::after').animationName)).toBe('none')
   })
 })

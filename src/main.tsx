@@ -9,8 +9,8 @@ async function enableMocking() {
 }
 
 /**
- * The app is imported only after the mocks start: engine.io-client (used by
- * socket.io-client) keeps a reference to the global WebSocket when its module
+ * The app runs after the mocks start. Socket.IO is imported later still, on
+ * demand: engine.io-client keeps a reference to the global WebSocket when it
  * loads, so it must load after MSW has patched WebSocket.
  */
 async function bootstrap() {

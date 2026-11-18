@@ -32,6 +32,8 @@ async function settle(page: Page) {
       ),
     )
   })
+  // The footer code loads after the first paint
+  await expect(page.locator('footer')).toBeVisible()
   // Toasts are transient: keep them out of the screenshots
   await page.addStyleTag({ content: '[data-sonner-toaster]{display:none!important}' })
 }

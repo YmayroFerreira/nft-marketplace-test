@@ -1,3 +1,4 @@
+import { responsiveImage } from '@/lib/images'
 import { formatShortDate } from '@/lib/format'
 import type { BlogPost } from '@/types/content'
 
@@ -9,7 +10,7 @@ export function BlogCard({ post }: BlogCardProps) {
   return (
     <article className="flex flex-col overflow-hidden rounded-lg bg-surface-card">
       <img
-        src={post.imageUrl}
+        {...responsiveImage(post.imageUrl, '(min-width: 1024px) 282px, 100vw')}
         alt=""
         width={268}
         height={195}

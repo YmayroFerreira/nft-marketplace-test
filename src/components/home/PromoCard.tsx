@@ -1,3 +1,4 @@
+import { responsiveImage } from '@/lib/images'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import arrowRightIcon from '@/assets/icons/arrow-right.svg'
@@ -12,7 +13,7 @@ export function PromoCard({ promo }: PromoCardProps) {
   return (
     <article className="relative flex h-full min-h-[250px] overflow-hidden rounded-lg bg-surface-card">
       <img
-        src={promo.imageUrl}
+        {...responsiveImage(promo.imageUrl, '292px')}
         alt=""
         width={292}
         height={250}
