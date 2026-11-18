@@ -1,4 +1,5 @@
-import { Link } from '@tanstack/react-router'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import searchIcon from '@/assets/icons/search.svg'
@@ -60,13 +61,7 @@ export function Header({ cartCount, userName }: HeaderProps) {
         </nav>
 
         <div className="flex items-center gap-7 pb-2.5">
-          <button
-            type="button"
-            className="grid size-8 place-items-center rounded-md hover:bg-accent"
-            aria-label="Buscar NFTs"
-          >
-            <img src={searchIcon} alt="" width={20} height={20} />
-          </button>
+          <HeaderSearch />
 
           <Link
             to="/carrinho"
@@ -106,5 +101,82 @@ export function Header({ cartCount, userName }: HeaderProps) {
         </div>
       </div>
     </header>
+  )
+}
+
+/** Desktop search: the magnifier opens a field that searches the catalog (/?q=...) */
+function HeaderSearch() {
+  const navigate = useNavigate()
+  const { q } = useSearch({ strict: false })
+  const [isOpen, setIsOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const restoreFocus = useRef(false)
+
+  // The magnifier only exists again after the re-render, so focus it in an effect
+  useEffect(() => {
+    if (!isOpen && restoreFocus.current) {
+      restoreFocus.current = false
+      toggleRef.current?.focus()
+    }
+  }, [isOpen])
+
+  function open() {
+    setQuery(typeof q === 'string' ? q : '')
+    setIsOpen(true)
+  }
+
+  function close() {
+    restoreFocus.current = true
+    setIsOpen(false)
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const term = query.trim()
+    setIsOpen(false)
+    void navigate({ to: '/', search: term ? { q: term } : {}, hash: 'catalogo' })
+  }
+
+  if (!isOpen) {
+    return (
+      <button
+        ref={toggleRef}
+        type="button"
+        onClick={open}
+        aria-expanded={false}
+        className="grid size-8 place-items-center rounded-md hover:bg-accent"
+        aria-label="Buscar NFTs"
+      >
+        <img src={searchIcon} alt="" width={20} height={20} />
+      </button>
+    )
+  }
+
+  return (
+    <form role="search" onSubmit={submit} className="flex items-center gap-2">
+      <label htmlFor="header-search" className="sr-only">
+        Buscar NFTs
+      </label>
+      <input
+        id="header-search"
+        type="search"
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') close()
+        }}
+        placeholder="Buscar NFTs..."
+        className="h-9 w-56 rounded-md border border-border-soft bg-surface-card px-3 text-sm text-foreground placeholder:text-brand-secondary focus-visible:border-primary focus-visible:outline-none"
+      />
+      <button
+        type="submit"
+        className="grid size-8 place-items-center rounded-md hover:bg-accent"
+        aria-label="Buscar"
+      >
+        <img src={searchIcon} alt="" width={20} height={20} />
+      </button>
+    </form>
   )
 }

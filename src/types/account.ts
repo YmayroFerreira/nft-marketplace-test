@@ -229,3 +229,19 @@ export interface ApiErrorBody {
     fields?: Record<string, string>
   }
 }
+
+// ---------- Explorer (simulated) ----------
+
+/** Public data of a confirmed purchase, as a block explorer would show it */
+export interface ExplorerTransaction {
+  hash: string
+  status: 'success'
+  network: Network
+  blockNumber: number
+  timestamp: string
+  from: string
+  to: string
+  value: EthString
+  fee: EthString
+  transfers: { name: string; tokenId: string; editionLabel: string; quantity: number }[]
+}

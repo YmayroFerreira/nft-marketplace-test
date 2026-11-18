@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { authApi, cartApi } from '@/api/endpoints'
-import { getSessionToken, onSessionTokenChange, setSessionToken } from '@/api/session-token'
+import { getSessionToken, onSessionExpired, onSessionTokenChange, setSessionToken } from '@/api/session-token'
 import type { AuthResponse } from '@/types/account'
 import { accountKeys } from '../account/keys'
 import { guestCart } from '../cart/guest-cart'
+import { clearCheckoutDraft } from '../checkout/checkout-draft'
 import { AuthContext } from './auth-context'
 import type { AuthTab } from './auth-search'
 
@@ -39,6 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void navigate({ to: '.', search: (prev) => ({ ...prev, auth: tab }), resetScroll: false })
     },
     [navigate],
+  )
+
+  // Expired session: ask to sign in again on the same page, so the user can continue
+  useEffect(
+    () =>
+      onSessionExpired(() => {
+        toast.warning('Sua sessão expirou. Entre novamente para continuar de onde parou.')
+        openAuthDialog('entrar')
+      }),
+    [openAuthDialog],
   )
 
   const requireAuth = useCallback(
@@ -87,6 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // The local session is cleared even if the request fails
     }
+    // A deliberate sign-out also drops private data kept for the checkout
+    clearCheckoutDraft()
     setSessionToken(null)
   }, [])
 

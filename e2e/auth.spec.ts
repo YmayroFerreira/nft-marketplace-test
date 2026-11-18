@@ -88,6 +88,9 @@ test.describe('Autenticação', () => {
     await gotoStable(page, '/pagamento')
     await signIn(page)
     await gotoStable(page, '/pagamento', 'session-expired')
-    await expect(page.getByRole('heading', { name: 'Entre na sua conta' })).toBeVisible()
+    // The API answers 401: the app warns and opens the sign-in dialog on the same page
+    await expect(page.getByText(/Sua sessão expirou/)).toBeVisible()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page).toHaveURL(/\/pagamento/)
   })
 })

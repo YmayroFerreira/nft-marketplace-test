@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { FormField } from '@/components/account/FormField'
@@ -9,7 +9,9 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { ApiError } from '@/api/client'
 import { checkoutApi } from '@/api/endpoints'
 import { useCreateOrder, useProfile, useWallets } from '@/features/account/hooks'
+import { useAuth } from '@/features/auth/auth-context'
 import { RequireAuth } from '@/features/auth/RequireAuth'
+import { clearCheckoutDraft, loadCheckoutDraft, saveCheckoutDraft } from '@/features/checkout/checkout-draft'
 import { useCart } from '@/features/cart/useCart'
 import { compareEth } from '@/lib/eth'
 import { cn } from '@/lib/utils'
@@ -91,24 +93,38 @@ interface CheckoutFlowProps {
 
 function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const createOrder = useCreateOrder()
   const primary = wallets.find((w) => w.isPrimary) ?? wallets[0]
+  // Data filled before a session expiry (same user only)
+  const [draft] = useState(() => (user ? loadCheckoutDraft(user.id) : null))
+  const draftWallet = wallets.find((w) => w.id === draft?.walletId)
 
   const [step, setStep] = useState<'details' | 'review'>('details')
-  const [collector, setCollector] = useState<CollectorDetails>({
-    // Pre-filled from the profile; the user can change it for this order
-    fullName: profile.displayName.includes(' ') ? profile.displayName : '',
-    email: profile.email,
-    phone: '',
-  })
-  const [walletId, setWalletId] = useState(primary?.id)
-  const [network, setNetwork] = useState<Network>(primary?.network ?? 'ethereum')
+  const [collector, setCollector] = useState<CollectorDetails>(
+    () =>
+      draft?.collector ?? {
+        // Pre-filled from the profile; the user can change it for this order
+        fullName: profile.displayName.includes(' ') ? profile.displayName : '',
+        email: profile.email,
+        phone: '',
+      },
+  )
+  const [walletId, setWalletId] = useState((draftWallet ?? primary)?.id)
+  const [network, setNetwork] = useState<Network>(draft?.network ?? draftWallet?.network ?? primary?.network ?? 'ethereum')
+
+  // Keep what the user typed, so a session expiry does not lose it
+  useEffect(() => {
+    if (user) saveCheckoutDraft({ userId: user.id, collector, walletId, network })
+  }, [user, collector, walletId, network])
   const [connection, setConnection] = useState<WalletConnection | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [quote, setQuote] = useState<CheckoutQuote | null>(null)
   /** Set when the API answered quote_changed: shows old vs new total */
   const [previousTotal, setPreviousTotal] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(
+    draft ? 'Recuperamos os dados que você tinha preenchido. Conecte a carteira e revise o pedido para continuar.' : null,
+  )
   // One key per purchase attempt: double clicks and retries after a timeout
   // reuse it, so the server never creates two orders for the same attempt
   const idempotencyKey = useRef(crypto.randomUUID())
@@ -185,7 +201,10 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
         idempotencyKey: idempotencyKey.current,
       },
       {
-        onSuccess: (order) => void navigate({ to: '/pedido/$orderId', params: { orderId: order.id } }),
+        onSuccess: (order) => {
+          clearCheckoutDraft()
+          void navigate({ to: '/pedido/$orderId', params: { orderId: order.id } })
+        },
         onError: (error) => {
           if (!(error instanceof ApiError)) return
           // A final answer from the server ends this attempt; network errors keep the key

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
 import { favoritesApi, ordersApi, profileApi, walletsApi } from '@/api/endpoints'
-import type { CreateOrderRequest, Favorites, Order } from '@/types/account'
+import type { CreateOrderRequest, Favorites, Order, UpdateWalletRequest } from '@/types/account'
 import { useAuth } from '../auth/auth-context'
 import { accountKeys } from './keys'
 
@@ -78,6 +78,11 @@ export function useWalletMutations() {
   }
   return {
     create: useMutation({ mutationFn: walletsApi.create, onSuccess: invalidate, onError }),
+    update: useMutation({
+      mutationFn: ({ id, ...changes }: { id: string } & UpdateWalletRequest) => walletsApi.update(id, changes),
+      onSuccess: invalidate,
+      onError,
+    }),
     setPrimary: useMutation({
       mutationFn: (id: string) => walletsApi.update(id, { isPrimary: true }),
       onSuccess: invalidate,

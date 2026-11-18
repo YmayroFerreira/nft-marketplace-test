@@ -188,6 +188,15 @@ function OrderCard({ order }: { order: Order }) {
             carteira conectada.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
+            {order.transactionHash && (
+              <Link
+                to="/explorador/tx/$hash"
+                params={{ hash: order.transactionHash }}
+                className={buttonVariants({ size: 'brand-md', variant: 'outline' })}
+              >
+                Ver no explorador (simulado)
+              </Link>
+            )}
             <button type="button" onClick={copyTransaction} className={buttonVariants({ size: 'brand-md', variant: 'outline' })}>
               Copiar ID da transação
             </button>

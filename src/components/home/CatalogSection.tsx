@@ -26,6 +26,9 @@ interface CatalogSectionProps {
   totalPages: number
   onFiltersChange: (filters: CatalogFilters) => void
   onClearFilters: () => void
+  /** Active free-text search, shown above the grid */
+  query?: string
+  onClearQuery?: () => void
   onTabChange: (tab: CatalogTab) => void
   onSortChange: (sort: CatalogSort) => void
   onPageChange: (page: number) => void
@@ -52,6 +55,8 @@ export function CatalogSection({
   totalPages,
   onFiltersChange,
   onClearFilters,
+  query,
+  onClearQuery,
   onTabChange,
   onSortChange,
   onPageChange,
@@ -76,7 +81,13 @@ export function CatalogSection({
         >
           <SheetTitle className="px-5 pt-5 text-lg font-bold text-foreground">Filtros</SheetTitle>
           {facets ? (
-            <FiltersSidebar facets={facets} value={filters} onChange={onFiltersChange} />
+            <FiltersSidebar
+              // Re-mounts when the price in the URL changes (Back/Forward), resetting the slider draft
+              key={`${filters.price?.min ?? ''}-${filters.price?.max ?? ''}`}
+              facets={facets}
+              value={filters}
+              onChange={onFiltersChange}
+            />
           ) : (
             <FiltersSkeleton />
           )}
@@ -90,7 +101,13 @@ export function CatalogSection({
       {/* Below lg the sidebar is hidden; filters open in the drawer above */}
       <aside className="hidden w-[310px] shrink-0 flex-col gap-6 lg:flex">
         {facets ? (
-          <FiltersSidebar facets={facets} value={filters} onChange={onFiltersChange} />
+          <FiltersSidebar
+              // Re-mounts when the price in the URL changes (Back/Forward), resetting the slider draft
+              key={`${filters.price?.min ?? ''}-${filters.price?.max ?? ''}`}
+              facets={facets}
+              value={filters}
+              onChange={onFiltersChange}
+            />
         ) : (
           <FiltersSkeleton />
         )}
@@ -103,6 +120,16 @@ export function CatalogSection({
 
       <div className="flex min-w-0 flex-1 flex-col items-end gap-14 md:gap-[88px]">
         <div className="flex w-full flex-col gap-4 md:gap-8">
+          {query && (
+            <p className="flex flex-wrap items-center gap-3 text-sm text-foreground" aria-live="polite">
+              <span>
+                Resultados para <strong className="text-text-accent">“{query}”</strong>
+              </span>
+              <button type="button" onClick={onClearQuery} className="text-xs text-text-secondary underline hover:text-text-accent">
+                Limpar busca
+              </button>
+            </p>
+          )}
           <CatalogToolbar tab={tab} sort={sort} onTabChange={onTabChange} onSortChange={onSortChange} />
 
           {errorMessage ? (

@@ -101,18 +101,22 @@ function HomePage() {
   const blogPosts = useQuery(contentQueries.blogPosts())
   const cardActions = useNftCardActions()
 
-  /** Updates the URL; any filter change goes back to page 1 */
+  /**
+   * Updates the URL; any filter change goes back to page 1. Each change is a
+   * new history entry, so Back/Forward walk through the user's filters.
+   */
   function updateSearch(next: Partial<HomeSearch>, keepPage = false) {
     void navigate({
       search: (prev) => ({ ...prev, ...next, page: keepPage ? next.page : undefined }),
       resetScroll: false,
-      replace: true,
     })
   }
 
   return (
     <>
       <MobileSearchBar
+        // Re-mounts when the URL changes (Back/Forward), so the field shows the current search
+        key={search.q ?? ''}
         initialQuery={search.q}
         onSearch={(q) => updateSearch({ q: q || undefined })}
         onOpenFilters={() => setFiltersDrawerOpen(true)}
@@ -143,6 +147,8 @@ function HomePage() {
         sort={search.sort ?? 'recent'}
         page={search.page ?? 1}
         totalPages={catalog.data?.totalPages ?? 1}
+        query={search.q}
+        onClearQuery={() => updateSearch({ q: undefined })}
         onClearFilters={() =>
           updateSearch({
             collections: undefined,

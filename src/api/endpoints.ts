@@ -2,6 +2,7 @@ import type {
   AuthResponse,
   Cart,
   CheckoutQuote,
+  ExplorerTransaction,
   GuestCartRequest,
   MergeCartResponse,
   WalletConnection,
@@ -105,6 +106,13 @@ export const ordersApi = {
     api.post<Order>('/orders', body, { headers: { 'Idempotency-Key': idempotencyKey } }).then((r) => r.data),
   list: () => api.get<Order[]>('/orders').then((r) => r.data),
   get: (id: string) => api.get<Order>(`/orders/${encodeURIComponent(id)}`).then((r) => r.data),
+}
+
+// ---------- Explorer (simulated) ----------
+
+export const explorerApi = {
+  transaction: (hash: string) =>
+    api.get<ExplorerTransaction>(`/explorer/tx/${encodeURIComponent(hash)}`).then((r) => r.data),
 }
 
 // ---------- Wallets ----------

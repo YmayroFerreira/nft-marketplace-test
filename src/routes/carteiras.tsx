@@ -93,7 +93,10 @@ function WalletsContent() {
 
 function WalletCard({ wallet }: { wallet: Wallet }) {
   const { setPrimary, remove } = useWalletMutations()
+  const [isEditing, setIsEditing] = useState(false)
   const busy = setPrimary.isPending || remove.isPending
+
+  if (isEditing) return <EditWalletForm wallet={wallet} onDone={() => setIsEditing(false)} />
 
   return (
     <article className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-surface-card p-4">
@@ -110,7 +113,16 @@ function WalletCard({ wallet }: { wallet: Wallet }) {
           <span title={wallet.address}>{wallet.ensName ?? shortHash(wallet.address)}</span>
         </p>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="brand-sm"
+          variant="outline"
+          disabled={busy}
+          aria-label={`Editar carteira ${wallet.label}`}
+          onClick={() => setIsEditing(true)}
+        >
+          Editar
+        </Button>
         {!wallet.isPrimary && (
           <Button size="brand-sm" variant="outline" disabled={busy} onClick={() => setPrimary.mutate(wallet.id)}>
             Tornar principal
@@ -129,6 +141,69 @@ function WalletCard({ wallet }: { wallet: Wallet }) {
         </Button>
       </div>
     </article>
+  )
+}
+
+/** Edits label and ENS; provider, network and address identify the wallet and cannot change */
+function EditWalletForm({ wallet, onDone }: { wallet: Wallet; onDone: () => void }) {
+  const { update } = useWalletMutations()
+  const [label, setLabel] = useState(wallet.label)
+  const [ensName, setEnsName] = useState(wallet.ensName?.replace(/.eth$/, '') ?? '')
+  const errors = update.error instanceof ApiError ? (update.error.fields ?? {}) : {}
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    update.mutate(
+      { id: wallet.id, label, ensName: ensName.trim() ? `${ensName.trim().replace(/.eth$/, '')}.eth` : null },
+      {
+        onSuccess: (updated) => {
+          toast.success(`Carteira ${updated.label} atualizada.`)
+          onDone()
+        },
+      },
+    )
+  }
+
+  return (
+    <form
+      noValidate
+      onSubmit={handleSubmit}
+      aria-label={`Editar carteira ${wallet.label}`}
+      className="flex flex-col gap-4 rounded-lg border border-primary bg-surface-card p-4"
+    >
+      <p className="text-xs text-text-secondary">
+        {walletProviderLabel(wallet.provider)} · Rede {NETWORK_LABELS[wallet.network]} · {shortHash(wallet.address)}
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField
+          label="Apelido da carteira"
+          required
+          value={label}
+          error={errors.label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
+        <FormField
+          label="Nome ENS (opcional)"
+          suffix=".eth"
+          value={ensName}
+          error={errors.ensName}
+          onChange={(e) => setEnsName(e.target.value)}
+        />
+      </div>
+      {update.isError && !Object.keys(errors).length && (
+        <p role="alert" className="text-sm text-destructive">
+          {update.error.message}
+        </p>
+      )}
+      <div className="flex gap-3">
+        <Button type="submit" size="brand-md" disabled={update.isPending}>
+          {update.isPending ? 'Salvando…' : 'Salvar alterações'}
+        </Button>
+        <Button type="button" size="brand-md" variant="ghost" onClick={onDone}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   )
 }
 

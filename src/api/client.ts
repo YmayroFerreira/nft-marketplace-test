@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import type { ApiErrorBody } from '@/types/account'
-import { getSessionToken, setSessionToken } from './session-token'
+import { expireSession, getSessionToken } from './session-token'
 
 /**
  * Single HTTP client of the app. It only knows the API contract: there are no
@@ -58,7 +58,7 @@ api.interceptors.response.use(
       body,
     )
     // An expired or invalid session signs the user out everywhere
-    if (status === 401 && getSessionToken()) setSessionToken(null)
+    if (status === 401 && getSessionToken()) expireSession()
     return Promise.reject(apiError)
   },
 )

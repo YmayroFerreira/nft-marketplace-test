@@ -30,6 +30,22 @@ export function setSessionToken(next: string | null) {
   for (const listener of listeners) listener(next)
 }
 
+const expiredListeners = new Set<() => void>()
+
+/** The API rejected the token (401): drop it and tell the app the session expired */
+export function expireSession() {
+  setSessionToken(null)
+  for (const listener of expiredListeners) listener()
+}
+
+/** Notifies only when the session expired (not on a regular sign-out) */
+export function onSessionExpired(listener: () => void) {
+  expiredListeners.add(listener)
+  return () => {
+    expiredListeners.delete(listener)
+  }
+}
+
 /** Notifies when the user signs in, signs out or the session expires */
 export function onSessionTokenChange(listener: Listener) {
   listeners.add(listener)
