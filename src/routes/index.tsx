@@ -141,7 +141,7 @@ function HomePage() {
         exploreTargetId={CATALOG_ID}
       />
 
-      <Suspense fallback={<div id={CATALOG_ID} aria-busy className="min-h-dvh" />}>
+      <Suspense fallback={<div id={CATALOG_ID} aria-busy className="min-h-(--page-height)" />}>
         <CatalogSection
           id={CATALOG_ID}
           nfts={catalog.data?.items ?? []}

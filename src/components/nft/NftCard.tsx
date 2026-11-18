@@ -35,7 +35,7 @@ export const NftCard = memo(function NftCard({ nft, isFavorite = false, onAddToC
           aria-label={`${nft.name}, ${formatEth(nft.price)}`}
         >
           <img
-            {...responsiveImage(nft.imageUrl, '(min-width: 768px) 258px, 50vw')}
+            {...responsiveImage(nft.imageUrl, '(min-width: 1441px) 21vw, (min-width: 768px) 258px, 50vw')}
             alt=""
             width={250}
             height={250}

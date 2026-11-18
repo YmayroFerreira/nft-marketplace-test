@@ -94,7 +94,7 @@ export function AuthDialog() {
       <DialogContent
         showCloseButton={false}
         // Mobile frames: full screen page (logo, title, form, link to the other form)
-        className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto rounded-lg bg-surface-card p-0 pb-12 ring-0 sm:max-w-[500px] max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-dvh max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:content-start max-md:rounded-none max-md:bg-ink max-md:pb-10"
+        className="max-h-[calc(var(--page-height)-2rem)] gap-0 overflow-y-auto rounded-lg bg-surface-card p-0 pb-12 ring-0 sm:max-w-[500px] max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-dvh max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:content-start max-md:rounded-none max-md:bg-ink max-md:pb-10"
       >
         <p aria-hidden className="pt-20 text-center text-5xl font-bold tracking-[0.08em] text-foreground md:hidden">
           KURIO

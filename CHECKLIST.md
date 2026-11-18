@@ -76,6 +76,8 @@ Levantados em 18/11/2026 por busca no código e nos nomes dos testes; confirmar 
 
 ## Desvios do Figma para documentar no `ARCHITECTURE.md`
 
+- [ ] Telas acima de 1440px: o Figma não define esse caso; a página inteira escala para o conteúdo ocupar a largura da tela, com 32px de borda proporcional (`--page-zoom` em `src/index.css`).
+
 - [ ] Modal de autenticação com fundo escurecido (o Figma não mostra scrim).
 - [ ] Mobile: barra de navegação inferior sem o recorte central e sem o botão de escanear (ver item acima).
 - [ ] Mobile: "Ordenar por", paginação, promoções, blog e footer mantidos abaixo da grade (o frame mobile não mostra), para não esconder conteúdo nem prejudicar SEO/acessibilidade.

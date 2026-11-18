@@ -64,7 +64,7 @@ function DesktopHero({ image, exploreTargetId }: Omit<HeroProps, 'secondaryImage
         </div>
 
         <img
-          {...responsiveImage(image.src, '450px')}
+          {...responsiveImage(image.src, '(min-width: 1441px) 36vw, 450px')}
           alt={image.alt}
           width={450}
           height={450}

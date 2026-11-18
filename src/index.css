@@ -36,6 +36,20 @@
   * {
     @apply border-border outline-ring/50;
   }
+  :root {
+    --page-zoom: 1;
+    /* Viewport height in the page's own (zoomed) units */
+    --page-height: calc(100dvh / var(--page-zoom));
+  }
+  /* Wider than the 1440px design: the 1200px content grows to fill the screen, with a 32px edge */
+  @media (width > 90rem) {
+    :root {
+      --page-zoom: tan(atan2(100vw, 1264px));
+    }
+    body {
+      zoom: var(--page-zoom);
+    }
+  }
   html {
     @apply font-sans antialiased;
     /* Keeps focused/scrolled-to elements clear of the fixed mobile tab bar */
@@ -47,7 +61,7 @@
     }
   }
   body {
-    @apply bg-background text-foreground min-h-dvh;
+    @apply bg-background text-foreground min-h-(--page-height);
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
