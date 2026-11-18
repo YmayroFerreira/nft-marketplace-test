@@ -29,9 +29,12 @@ const PING_INTERVAL_MS = 20_000
 interface Connection {
   io: ReturnType<typeof toSocketIo>
   userId: string | null
+  close: () => void
 }
 
 const connections = new Set<Connection>()
+/** While true, the server drops every socket and refuses new ones */
+let isOffline = false
 let priceTicker: ReturnType<typeof setInterval> | null = null
 
 function event<T extends NftUpdatedEvent | OrderUpdatedEvent>(
@@ -58,6 +61,22 @@ export function publishNftUpdated(nft: NftDetail) {
     editions: nft.editions.map((e) => ({ id: e.id, price: e.price, available: e.available })),
   })
   for (const connection of connections) connection.io.client.emit('nft.updated', payload)
+  return payload
+}
+
+/** Sends an event as it is, to replay duplicate or outdated ones */
+export function emitRawEvent(payload: NftUpdatedEvent | OrderUpdatedEvent) {
+  for (const connection of connections) connection.io.client.emit(payload.type, payload as never)
+}
+
+export function setSocketOffline(offline: boolean) {
+  isOffline = offline
+  if (offline) for (const connection of [...connections]) connection.close()
+}
+
+export function socketStatus() {
+  const all = [...connections]
+  return { connected: all.length, authenticated: all.filter((c) => c.userId !== null).length }
 }
 
 /** Order events go only to the sockets of the user who owns the order */
@@ -115,7 +134,16 @@ export const realtimeHandlers = [
       return
     }
 
-    const connection: Connection = { io: toSocketIo(wsConnection), userId: null }
+    if (isOffline) {
+      wsConnection.client.close()
+      return
+    }
+
+    const connection: Connection = {
+      io: toSocketIo(wsConnection),
+      userId: null,
+      close: () => wsConnection.client.close(),
+    }
     connections.add(connection)
     syncPriceTicker()
 

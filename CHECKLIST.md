@@ -68,7 +68,9 @@ Levantados em 18/11/2026 por busca no código e nos nomes dos testes; confirmar 
 - [x] Reutilizar a chave de idempotência com conteúdo diferente gera conflito (`idempotency_conflict`).
 - [ ] Tela para rotas inexistentes.
 - [x] Testes: troca de usuário e timeout com recuperação do mesmo pedido (`e2e/resilience.spec.ts`).
-- [ ] Testes: preço alterado via Socket.IO no checkout, eventos duplicados ou antigos, desconexão e retomada de pedido pendente, e controle do relógio nos cenários sensíveis a tempo.
+- [x] Testes de tempo real pelo `socket.io-client`: preço alterado no carrinho e no checkout, eventos duplicados ou antigos, reconexão, desconexão e retomada de pedido pendente (`e2e/realtime.spec.ts`).
+- [x] Relógio controlado no teste de cotação expirada.
+- [ ] Documentar os controles do mock em `/api/__mock/*`.
 
 ## Entrega (nesta ordem)
 

@@ -452,8 +452,17 @@ function CheckoutFlow({ cart, wallets, profile, onAttemptChange }: CheckoutFlowP
 
               {previousTotal && (
                 <p role="alert" className="rounded-md border border-primary bg-primary/10 p-3 text-sm text-foreground">
-                  Os valores mudaram desde a revisão: o total foi de {formatEth(previousTotal)} para{' '}
-                  <strong>{formatEth(quote.total)}</strong>. Confira os itens e confirme novamente.
+                  {previousTotal === quote.total ? (
+                    <>
+                      Sua cotação foi atualizada e o total continua <strong>{formatEth(quote.total)}</strong>. Confirme
+                      novamente.
+                    </>
+                  ) : (
+                    <>
+                      Os valores mudaram desde a revisão: o total foi de {formatEth(previousTotal)} para{' '}
+                      <strong>{formatEth(quote.total)}</strong>. Confira os itens e confirme novamente.
+                    </>
+                  )}
                 </p>
               )}
 
