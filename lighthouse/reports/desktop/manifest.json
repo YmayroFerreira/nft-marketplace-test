@@ -2,8 +2,8 @@
   {
     "url": "http://localhost:4174/",
     "isRepresentativeRun": false,
-    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_14_46_02.report.html",
-    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_14_46_02.report.json",
+    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_16_45_28.report.html",
+    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_16_45_28.report.json",
     "summary": {
       "performance": 0.99,
       "accessibility": 1,
@@ -15,34 +15,8 @@
   {
     "url": "http://localhost:4174/",
     "isRepresentativeRun": false,
-    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_14_46_16.report.html",
-    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_14_46_16.report.json",
-    "summary": {
-      "performance": 0.99,
-      "accessibility": 1,
-      "best-practices": 1,
-      "seo": 1,
-      "agentic-browsing": 0.5
-    }
-  },
-  {
-    "url": "http://localhost:4174/nft/emerald-ape-042",
-    "isRepresentativeRun": false,
-    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_14_46_42.report.html",
-    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_14_46_42.report.json",
-    "summary": {
-      "performance": 0.99,
-      "accessibility": 1,
-      "best-practices": 1,
-      "seo": 1,
-      "agentic-browsing": 0.5
-    }
-  },
-  {
-    "url": "http://localhost:4174/nft/emerald-ape-042",
-    "isRepresentativeRun": false,
-    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_14_46_56.report.html",
-    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_14_46_56.report.json",
+    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_16_45_41.report.html",
+    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_16_45_41.report.json",
     "summary": {
       "performance": 1,
       "accessibility": 1,
@@ -52,10 +26,36 @@
     }
   },
   {
+    "url": "http://localhost:4174/nft/emerald-ape-042",
+    "isRepresentativeRun": false,
+    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_16_45_55.report.html",
+    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_16_45_55.report.json",
+    "summary": {
+      "performance": 0.99,
+      "accessibility": 1,
+      "best-practices": 1,
+      "seo": 1,
+      "agentic-browsing": 0.5
+    }
+  },
+  {
+    "url": "http://localhost:4174/nft/emerald-ape-042",
+    "isRepresentativeRun": false,
+    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_16_46_22.report.html",
+    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_16_46_22.report.json",
+    "summary": {
+      "performance": 0.99,
+      "accessibility": 1,
+      "best-practices": 1,
+      "seo": 1,
+      "agentic-browsing": 0.5
+    }
+  },
+  {
     "url": "http://localhost:4174/",
     "isRepresentativeRun": true,
-    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_14_45_48.report.html",
-    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_14_45_48.report.json",
+    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_16_45_14.report.html",
+    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost--2026_11_18_16_45_14.report.json",
     "summary": {
       "performance": 0.99,
       "accessibility": 1,
@@ -67,8 +67,8 @@
   {
     "url": "http://localhost:4174/nft/emerald-ape-042",
     "isRepresentativeRun": true,
-    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_14_46_29.report.html",
-    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_14_46_29.report.json",
+    "htmlPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_16_46_09.report.html",
+    "jsonPath": "C:\\Users\\ymayr\\Desktop\\nft-marketplace-test\\lighthouse\\reports\\desktop\\localhost-nft_emerald_ape_042-2026_11_18_16_46_09.report.json",
     "summary": {
       "performance": 0.99,
       "accessibility": 1,
