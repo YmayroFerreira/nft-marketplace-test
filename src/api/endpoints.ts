@@ -1,6 +1,10 @@
 import type {
   AuthResponse,
   Cart,
+  CheckoutQuote,
+  GuestCartRequest,
+  MergeCartResponse,
+  WalletConnection,
   ChangePasswordRequest,
   CreateOrderRequest,
   CreateWalletRequest,
@@ -16,7 +20,7 @@ import type {
   User,
   Wallet,
 } from '@/types/account'
-import type { CatalogFacets, CatalogQuery, EditionId, Nft, NftDetail, NftReview, Paginated } from '@/types/catalog'
+import type { CatalogFacets, CatalogQuery, EditionId, Network, Nft, NftDetail, NftReview, Paginated } from '@/types/catalog'
 import type { BlogPost, Promo } from '@/types/content'
 import { api } from './client'
 
@@ -65,6 +69,21 @@ export const cartApi = {
     api.delete<Cart>(`/cart/items/${encodeURIComponent(nftId)}/${editionId}`).then((r) => r.data),
   applyPromo: (code: string) => api.post<Cart>('/cart/promo', { code }).then((r) => r.data),
   removePromo: () => api.delete<Cart>('/cart/promo').then((r) => r.data),
+  /** Values of a visitor cart (kept in the browser), computed by the API */
+  preview: (body: GuestCartRequest) => api.post<Cart>('/cart/preview', body).then((r) => r.data),
+  /** Merges the visitor cart into the account right after sign-in */
+  merge: (body: GuestCartRequest) => api.post<MergeCartResponse>('/cart/merge', body).then((r) => r.data),
+}
+
+// ---------- Checkout ----------
+
+export const checkoutApi = {
+  /** Review step: the API freezes the values; the order is placed against this quote */
+  quote: () => api.post<CheckoutQuote>('/checkout/quote').then((r) => r.data),
+  connectWallet: (walletId: string, network: Network) =>
+    api.post<WalletConnection>(`/wallets/${encodeURIComponent(walletId)}/connect`, { network }).then((r) => r.data),
+  disconnectWallet: (connectionId: string) =>
+    api.delete(`/wallet-connections/${encodeURIComponent(connectionId)}`).then(() => undefined),
 }
 
 // ---------- Favorites ----------

@@ -13,7 +13,7 @@ export interface AuthContextValue {
   requireAuth: (action: () => void) => void
   openAuthDialog: (tab?: AuthTab) => void
   /** Called by the auth dialog after the API confirms the sign-in or sign-up */
-  completeSignIn: (response: AuthResponse) => void
+  completeSignIn: (response: AuthResponse) => Promise<void>
   signOut: () => Promise<void>
 }
 

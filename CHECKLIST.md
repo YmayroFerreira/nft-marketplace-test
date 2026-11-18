@@ -34,7 +34,7 @@ Pendências e decisões para revisar antes da entrega.
 - [x] Bloco 1 — Valores em ETH como strings decimais (aritmética exata em wei com BigInt, `src/lib/eth.ts`).
 - [x] Bloco 1 — Senhas com hash PBKDF2-SHA256 + salt no mock (nunca em texto puro).
 - [x] Bloco 1 — Edições (1/1, 1/10, 1/50, ABERTA) com preço e estoque próprios; edição indisponível; carrinho por NFT + edição; cupom expirado (`LANCAMENTO2025`).
-- [ ] Bloco 2 — Carrinho do visitante mesclado no login; revalidar cotação antes de confirmar; dados do colecionador; rede e simulação de conexão/recusa/desconexão de carteira; etapa de revisão; remover do carrinho só o que foi comprado.
+- [x] Bloco 2 — Carrinho do visitante mesclado no login; revalidar cotação antes de confirmar; dados do colecionador; rede e simulação de conexão/recusa/desconexão de carteira; etapa de revisão; remover do carrinho só o que foi comprado.
 - [ ] Bloco 3 — Histórico do navegador nos filtros (push em vez de replace); busca no desktop; editar carteira; retomada após sessão expirar no checkout; link de exploração simulado.
 - [ ] Bloco 4 — Frames mobile (Detalhe, Carrinho, Pagamento, Login, Cadastro).
 

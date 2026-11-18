@@ -70,6 +70,41 @@ export async function apiFetch<T>(page: Page, path: string, init: { method?: str
   ) as Promise<{ status: number; data: T }>
 }
 
+/**
+ * On /pagamento: connects the (pre-selected) wallet and goes to the review
+ * step. Collector data comes pre-filled from the demo profile.
+ */
+export async function reviewCheckout(page: Page) {
+  await page.getByRole('button', { name: 'Conectar carteira' }).click()
+  await expect(page.getByText(/Conectada em/)).toBeVisible()
+  await page.getByRole('button', { name: 'Revisar pedido' }).click()
+  await expect(page.getByRole('heading', { name: 'Revise antes de confirmar' })).toBeVisible()
+}
+
+/** Places an order through the API (quote → wallet connection → order) */
+export async function apiPlaceOrder(page: Page, idempotencyKey: string) {
+  const quote = await apiFetch<{ id: string }>(page, '/api/checkout/quote', { method: 'POST' })
+  const wallets = await apiFetch<{ id: string; network: string }[]>(page, '/api/wallets')
+  const wallet = wallets.data[0]
+  const connection = await apiFetch<{ id: string }>(page, `/api/wallets/${wallet.id}/connect`, {
+    method: 'POST',
+    body: { network: wallet.network },
+  })
+  const body = {
+    quoteId: quote.data.id,
+    walletId: wallet.id,
+    connectionId: connection.data.id,
+    network: wallet.network,
+    collector: { fullName: 'Nova Colecionadora', email: DEMO_USER.email },
+  }
+  const order = await apiFetch<{ id: string; status: string; error?: { code: string } }>(page, '/api/orders', {
+    method: 'POST',
+    body,
+    headers: { 'Idempotency-Key': idempotencyKey },
+  })
+  return { order, body }
+}
+
 export function catalogCards(page: Page) {
   return page.locator('#catalogo article')
 }

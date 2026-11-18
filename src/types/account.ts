@@ -67,6 +67,25 @@ export interface UpdateCartItemRequest {
   expectedVersion?: number
 }
 
+/** A line of the visitor's cart, kept in the browser until sign-in */
+export interface GuestCartLine {
+  nftId: string
+  editionId: EditionId
+  quantity: number
+}
+
+/** Visitor cart sent to the API to compute values (POST /cart/preview) or to merge it (POST /cart/merge) */
+export interface GuestCartRequest {
+  items: GuestCartLine[]
+  promoCode?: string | null
+}
+
+export interface MergeCartResponse {
+  cart: Cart
+  /** Lines that could not be merged as-is (sold out, limited stock) */
+  adjustments: string[]
+}
+
 // ---------- Wallets ----------
 
 export type WalletProvider = 'metamask' | 'walletconnect' | 'coinbase'
@@ -110,6 +129,39 @@ export interface OrderItem {
   lineTotal: EthString
 }
 
+/** Buyer data from the checkout form */
+export interface CollectorDetails {
+  fullName: string
+  email: string
+  phone?: string
+}
+
+/**
+ * Price quote for the current cart, issued by the API at the review step. The
+ * order is placed against this quote: if prices, stock, coupon or fees change
+ * before confirmation, the API answers 409 `quote_changed` with a new quote.
+ */
+export interface CheckoutQuote {
+  id: string
+  items: OrderItem[]
+  promoCode: string | null
+  subtotal: EthString
+  discount: EthString
+  networkFee: EthString
+  total: EthString
+  cartVersion: number
+  expiresAt: string
+}
+
+/** Simulated wallet connection, required to confirm a purchase */
+export interface WalletConnection {
+  id: string
+  walletId: string
+  network: Network
+  connectedAt: string
+  expiresAt: string
+}
+
 export interface Order {
   id: string
   status: OrderStatus
@@ -119,6 +171,9 @@ export interface Order {
   networkFee: EthString
   total: EthString
   wallet: Pick<Wallet, 'id' | 'label' | 'provider' | 'network' | 'address'>
+  /** Network chosen at checkout */
+  network: Network
+  collector: CollectorDetails
   /** Set when the order is confirmed */
   transactionHash: string | null
   failureReason: string | null
@@ -128,9 +183,12 @@ export interface Order {
 }
 
 export interface CreateOrderRequest {
+  /** Quote the user reviewed; values are revalidated against it */
+  quoteId: string
   walletId: string
-  /** Cart version the user reviewed; the order is rejected if the cart changed since */
-  cartVersion: number
+  connectionId: string
+  network: Network
+  collector: CollectorDetails
 }
 
 // ---------- Profile ----------

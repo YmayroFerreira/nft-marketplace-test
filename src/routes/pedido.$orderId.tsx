@@ -144,7 +144,15 @@ function OrderCard({ order }: { order: Order }) {
         </div>
         <div className="flex flex-col gap-1">
           <dt className="text-text-secondary">Carteira</dt>
-          <dd className="text-foreground">{walletProviderLabel(order.wallet.provider)}</dd>
+          <dd className="text-foreground">
+            {walletProviderLabel(order.wallet.provider)} · {NETWORK_LABELS[order.network]}
+          </dd>
+        </div>
+        <div className="col-span-2 flex flex-col gap-1">
+          <dt className="text-text-secondary">Colecionador</dt>
+          <dd className="text-foreground">
+            {order.collector.fullName} · {order.collector.email}
+          </dd>
         </div>
       </dl>
 
@@ -176,7 +184,7 @@ function OrderCard({ order }: { order: Order }) {
       {isDone && (
         <div className="mt-6 flex flex-col items-center gap-4 text-center">
           <p className="text-xs text-text-secondary">
-            Transação confirmada na {NETWORK_LABELS[order.wallet.network]}. A propriedade foi transferida para a sua
+            Transação confirmada na {NETWORK_LABELS[order.network]}. A propriedade foi transferida para a sua
             carteira conectada.
           </p>
           <div className="flex flex-wrap justify-center gap-3">

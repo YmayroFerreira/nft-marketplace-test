@@ -8,7 +8,8 @@ import { QuantityStepper } from '@/components/common/QuantityStepper'
 import { NftCard, NftCardSkeleton } from '@/components/nft/NftCard'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/api/client'
-import { useAddToCart, useFavorites, useToggleFavorite } from '@/features/account/hooks'
+import { useFavorites, useToggleFavorite } from '@/features/account/hooks'
+import { useCartActions } from '@/features/cart/useCart'
 import { useAuth } from '@/features/auth/auth-context'
 import { catalogQueries } from '@/features/catalog/queries'
 import { useNftCardActions } from '@/features/catalog/useNftCardActions'
@@ -67,7 +68,8 @@ function Overview({ nft }: { nft: NftDetail }) {
   const [quantity, setQuantity] = useState(1)
   const favorites = useFavorites()
   const toggleFavorite = useToggleFavorite()
-  const addToCart = useAddToCart()
+  const cartActions = useCartActions()
+  const [isAdding, setIsAdding] = useState(false)
   const isFavorite = favorites.data?.nftIds.includes(nft.id) ?? false
   // Live data: the selected edition always comes from the (realtime-updated) NFT
   const edition = nft.editions.find((e) => e.id === editionId) ?? nft.editions[0]
@@ -76,15 +78,17 @@ function Overview({ nft }: { nft: NftDetail }) {
   const safeQuantity = Math.min(quantity, Math.max(1, edition.available))
   const image = nft.gallery[imageIndex] ?? nft.imageUrl
 
-  function buy() {
-    requireAuth(async () => {
-      try {
-        await addToCart.add(nft.id, edition.id, nft.name, safeQuantity)
-        void navigate({ to: '/carrinho' })
-      } catch {
-        // The error toast is shown by the mutation
-      }
-    })
+  // Buying does not need a session: visitors keep a cart that is merged on sign-in
+  async function buy() {
+    setIsAdding(true)
+    try {
+      await cartActions.add(nft.id, edition.id, nft.name, safeQuantity)
+      void navigate({ to: '/carrinho' })
+    } catch {
+      // The error toast is shown by the cart actions
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   return (
@@ -213,8 +217,8 @@ function Overview({ nft }: { nft: NftDetail }) {
             disabled={soldOut}
           />
           <div className="flex flex-1 flex-wrap gap-2">
-            <Button size="brand-md" className="min-w-[124px] font-bold uppercase" onClick={buy} disabled={soldOut || addToCart.isPending}>
-              {addToCart.isPending ? 'Adicionando…' : 'Comprar'}
+            <Button size="brand-md" className="min-w-[124px] font-bold uppercase" onClick={buy} disabled={soldOut || isAdding}>
+              {isAdding ? 'Adicionando…' : 'Comprar'}
             </Button>
             <Button
               size="brand-md"

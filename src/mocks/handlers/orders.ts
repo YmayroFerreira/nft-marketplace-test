@@ -1,14 +1,23 @@
 import { http, HttpResponse } from 'msw'
-import type { CreateOrderRequest, Order } from '@/types/account'
+import type { CollectorDetails, CreateOrderRequest, Order } from '@/types/account'
+import type { Network } from '@/types/catalog'
+import { scaleEth } from '@/lib/eth'
 import { commit, getCart, getDb, nextId, touchCart, type StoredOrder } from '../db'
 import { API, apiError, readJson, requireUser, simulateNetwork } from '../http-utils'
 import { publishNftUpdated, publishOrderUpdated } from '../realtime'
 import { getScenario } from '../scenarios'
-import { findEdition, toCart } from './cart'
+import { findEdition } from './cart'
+import { issueQuote, sameQuote, toQuote } from './checkout'
 
 /** Time from `pending` to `processing`, and from `processing` to the final status */
 const PROCESSING_DELAY_MS = 1500
 const SETTLEMENT_DELAY_MS = 2500
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_PATTERN = /^[0-9+()\s-]{8,20}$/
+
+/** Users whose quote was already changed in the `quote-changes` scenario (once per page load) */
+const quoteChangedFor = new Set<string>()
 
 function toOrder(stored: StoredOrder): Order {
   const { userId: _userId, idempotencyKey: _key, ...order } = stored
@@ -26,23 +35,27 @@ function update(order: StoredOrder, changes: Partial<StoredOrder>) {
   publishOrderUpdated(order)
 }
 
-function settle(order: StoredOrder) {
-  const db = getDb()
+/** After confirmation, only the purchased copies leave the cart; anything added meanwhile stays */
+function removePurchasedFromCart(order: StoredOrder) {
+  const cart = getCart(order.userId)
+  for (const item of order.items) {
+    const line = cart.items.find((i) => i.nftId === item.nftId && i.editionId === item.editionId)
+    if (line) line.quantity -= item.quantity
+  }
+  cart.items = cart.items.filter((line) => line.quantity > 0)
+  if (cart.items.length === 0) cart.promoCode = null
+  touchCart(cart)
+}
 
+function settle(order: StoredOrder) {
   if (getScenario().checkoutFails) {
-    // Payment failed: give the items back to the user's cart
-    const cart = getCart(order.userId)
-    for (const item of order.items) {
-      const existing = cart.items.find((i) => i.nftId === item.nftId && i.editionId === item.editionId)
-      if (existing) existing.quantity += item.quantity
-      else cart.items.push({ nftId: item.nftId, editionId: item.editionId, quantity: item.quantity })
-    }
-    touchCart(cart)
+    // Payment refused: the cart was never touched, so the items are still there
     update(order, { status: 'failed', failureReason: 'A transação foi recusada pela rede. Nenhum valor foi cobrado.' })
     return
   }
 
-  // Confirmed: the purchased copies leave the stock of their edition
+  // Confirmed: the purchased copies leave the stock of their edition and the cart
+  const db = getDb()
   for (const item of order.items) {
     const nft = db.nfts[item.nftId]
     const edition = findEdition(nft, item.editionId)
@@ -52,6 +65,7 @@ function settle(order: StoredOrder) {
     nft.version += 1
     publishNftUpdated(nft)
   }
+  removePurchasedFromCart(order)
   update(order, { status: 'confirmed', transactionHash: randomTxHash() })
 }
 
@@ -72,6 +86,40 @@ export function resumePendingOrders() {
   for (const order of Object.values(getDb().orders)) scheduleProgress(order)
 }
 
+function validateCollector(collector: Partial<CollectorDetails> | undefined) {
+  const fields: Record<string, string> = {}
+  const fullName = collector?.fullName?.trim() ?? ''
+  const email = collector?.email?.trim() ?? ''
+  const phone = collector?.phone?.trim() ?? ''
+  if (fullName.length < 3 || !fullName.includes(' ')) fields['collector.fullName'] = 'Informe nome e sobrenome.'
+  if (!EMAIL_PATTERN.test(email)) fields['collector.email'] = 'Informe um e-mail válido.'
+  if (phone && !PHONE_PATTERN.test(phone)) fields['collector.phone'] = 'Informe um telefone válido.'
+  return { fields, collector: { fullName, email, ...(phone ? { phone } : {}) } }
+}
+
+/** 409 with a fresh quote: the client must show the new values and ask again */
+function quoteChanged(userId: string, message: string) {
+  const result = issueQuote(userId)
+  if ('error' in result) return result.error
+  return HttpResponse.json(
+    { error: { code: 'quote_changed', message }, quote: toQuote(result.quote) },
+    { status: 409 },
+  )
+}
+
+/** Simulates market activity between review and confirmation (`quote-changes` scenario) */
+function maybeChangePrice(userId: string, quoteNftId: string | undefined) {
+  if (!getScenario().quoteChanges || quoteChangedFor.has(userId) || !quoteNftId) return
+  const nft = getDb().nfts[quoteNftId]
+  if (!nft) return
+  quoteChangedFor.add(userId)
+  for (const edition of nft.editions) edition.price = scaleEth(edition.price, 11, 10, 4)
+  nft.price = nft.editions.find((e) => e.id === nft.defaultEditionId)?.price ?? nft.price
+  nft.version += 1
+  commit()
+  publishNftUpdated(nft)
+}
+
 export const ordersHandlers = [
   http.post(`${API}/orders`, async ({ request }) => {
     const failure = await simulateNetwork()
@@ -86,48 +134,84 @@ export const ordersHandlers = [
     }
 
     const db = getDb()
-    // Same key from the same user: return the order created the first time
-    const existing = Object.values(db.orders).find(
-      (o) => o.userId === userId && o.idempotencyKey === idempotencyKey,
-    )
+    // Same key from the same user (double click, retry after a timeout): same order
+    const existing = Object.values(db.orders).find((o) => o.userId === userId && o.idempotencyKey === idempotencyKey)
     if (existing) return HttpResponse.json(toOrder(existing), { status: 200 })
 
-    const body = await readJson<CreateOrderRequest>(request)
-    const wallet = (db.wallets[userId] ?? []).find((w) => w.id === body?.walletId)
-    if (!wallet) {
-      return apiError(422, 'validation_error', 'Selecione uma carteira válida.', {
-        walletId: 'Selecione uma carteira válida.',
-      })
-    }
-
-    const cart = toCart(userId)
-    if (cart.items.length === 0) return apiError(409, 'cart_empty', 'Seu carrinho está vazio.')
-    if (body?.cartVersion !== cart.version) {
+    // One purchase at a time: a new attempt while another is in progress would buy the same items twice
+    const inProgress = Object.values(db.orders).find(
+      (o) => o.userId === userId && (o.status === 'pending' || o.status === 'processing'),
+    )
+    if (inProgress) {
       return HttpResponse.json(
-        { error: { code: 'cart_changed', message: 'Seu carrinho mudou. Revise os itens antes de pagar.' }, cart },
+        {
+          error: { code: 'order_in_progress', message: 'Você já tem um pedido sendo processado.' },
+          orderId: inProgress.id,
+        },
         { status: 409 },
       )
     }
-    const unavailable = cart.items.find((item) => item.quantity > item.available)
-    if (unavailable) {
-      return apiError(
-        409,
-        'insufficient_editions',
-        `Só restam ${unavailable.available} cópias da edição ${unavailable.editionLabel} de ${unavailable.name}.`,
-      )
+
+    const body = await readJson<CreateOrderRequest>(request)
+
+    const { fields, collector } = validateCollector(body?.collector)
+    if (Object.keys(fields).length) return apiError(422, 'validation_error', 'Confira seus dados.', fields)
+
+    const wallet = (db.wallets[userId] ?? []).find((w) => w.id === body?.walletId)
+    if (!wallet) {
+      return apiError(422, 'validation_error', 'Selecione uma carteira válida.', { walletId: 'Selecione uma carteira válida.' })
     }
 
+    const network = body?.network as Network | undefined
+    const connection = body?.connectionId ? db.walletConnections[body.connectionId] : undefined
+    const connectionValid =
+      connection &&
+      connection.userId === userId &&
+      connection.walletId === wallet.id &&
+      connection.network === network &&
+      Date.parse(connection.expiresAt) > Date.now()
+    if (!connectionValid || getScenario().walletDisconnects) {
+      if (connection) delete db.walletConnections[connection.id]
+      commit()
+      return apiError(409, 'wallet_disconnected', 'A carteira foi desconectada. Conecte novamente para confirmar.')
+    }
+
+    const quote = body?.quoteId ? db.quotes[body.quoteId] : undefined
+    if (!quote || quote.userId !== userId) {
+      return quoteChanged(userId, 'Revise o pedido antes de confirmar.')
+    }
+    if (Date.parse(quote.expiresAt) < Date.now()) {
+      return quoteChanged(userId, 'A cotação expirou. Confira os valores atualizados.')
+    }
+
+    maybeChangePrice(userId, quote.items[0]?.nftId)
+
+    // Revalidate price, stock, coupon and fees against the current data
+    const fresh = issueQuote(userId)
+    if ('error' in fresh) return fresh.error
+    if (fresh.quote.cartVersion !== quote.cartVersion || !sameQuote(fresh.quote, quote)) {
+      return HttpResponse.json(
+        {
+          error: { code: 'quote_changed', message: 'Os valores mudaram desde a revisão. Confira e confirme novamente.' },
+          quote: toQuote(fresh.quote),
+        },
+        { status: 409 },
+      )
+    }
+    delete db.quotes[fresh.quote.id]
+
     const now = new Date().toISOString()
+    // The receipt is a snapshot of the quote: later catalog changes never alter it
     const order: StoredOrder = {
       id: nextId('order'),
       userId,
       idempotencyKey,
       status: 'pending',
-      items: cart.items.map(({ available: _available, ...item }) => item),
-      subtotal: cart.subtotal,
-      discount: cart.discount,
-      networkFee: cart.networkFee,
-      total: cart.total,
+      items: quote.items,
+      subtotal: quote.subtotal,
+      discount: quote.discount,
+      networkFee: quote.networkFee,
+      total: quote.total,
       wallet: {
         id: wallet.id,
         label: wallet.label,
@@ -135,6 +219,8 @@ export const ordersHandlers = [
         network: wallet.network,
         address: wallet.address,
       },
+      network: connection.network,
+      collector,
       transactionHash: null,
       failureReason: null,
       createdAt: now,
@@ -142,12 +228,8 @@ export const ordersHandlers = [
       version: 1,
     }
     db.orders[order.id] = order
-
-    // The cart is emptied when the order is created
-    const storedCart = getCart(userId)
-    storedCart.items = []
-    storedCart.promoCode = null
-    touchCart(storedCart)
+    delete db.quotes[quote.id]
+    // The cart is NOT emptied here: purchased copies are removed only on confirmation
     commit()
 
     scheduleProgress(order)

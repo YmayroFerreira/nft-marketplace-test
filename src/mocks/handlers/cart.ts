@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import type { Cart, UpdateCartItemRequest } from '@/types/account'
+import type { Cart, CartItem, GuestCartRequest, MergeCartResponse, UpdateCartItemRequest } from '@/types/account'
 import type { EditionId, NftDetail } from '@/types/catalog'
 import { addEth, minEth, mulEth, scaleEth, subEth, type EthString } from '@/lib/eth'
 import { commit, getCart, getDb, touchCart } from '../db'
@@ -19,11 +19,29 @@ export function findEdition(nft: NftDetail | undefined, editionId: string) {
   return nft?.editions.find((edition) => edition.id === editionId)
 }
 
-/** Builds the public cart, recomputing prices from the current NFT data */
-export function toCart(userId: string): Cart {
-  const stored = getCart(userId)
+type Line = { nftId: string; editionId: EditionId; quantity: number }
+
+/** Returns an API error for an unknown or expired code, or null if the code is usable */
+function promoError(code: string) {
+  const promo = PROMO_CODES[code]
+  if (!promo) {
+    return apiError(422, 'invalid_promo_code', 'Código promocional inválido.', { code: 'Código promocional inválido.' })
+  }
+  if (promo.expiresAt && Date.parse(promo.expiresAt) < Date.now()) {
+    return apiError(422, 'expired_promo_code', 'Este código promocional expirou.', {
+      code: 'Este código promocional expirou.',
+    })
+  }
+  return null
+}
+
+/**
+ * Prices cart lines with the current catalog data. Single source of the cart
+ * math, used by the user cart, the visitor preview and the checkout quote.
+ */
+export function priceLines(lines: Line[], promoCode: string | null) {
   const nfts = getDb().nfts
-  const items = stored.items.flatMap((item) => {
+  const items: CartItem[] = lines.flatMap((item) => {
     const nft = nfts[item.nftId]
     const edition = findEdition(nft, item.editionId)
     if (!nft || !edition) return []
@@ -43,21 +61,36 @@ export function toCart(userId: string): Cart {
     ]
   })
   const subtotal = addEth('0', ...items.map((item) => item.lineTotal))
-  const promo = stored.promoCode ? PROMO_CODES[stored.promoCode] : undefined
+  const promo = promoCode ? PROMO_CODES[promoCode] : undefined
   const discount = promo ? minEth(subtotal, promo.discount(subtotal)) : '0'
   const networkFee = items.length ? NETWORK_FEE : '0'
-
   return {
     items,
     itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
-    promoCode: stored.promoCode,
+    promoCode,
     subtotal,
     discount,
     networkFee,
     total: addEth(subEth(subtotal, discount), networkFee),
-    version: stored.version,
-    updatedAt: stored.updatedAt,
   }
+}
+
+/** Builds the public cart of a user, recomputing prices from the current NFT data */
+export function toCart(userId: string): Cart {
+  const stored = getCart(userId)
+  return { ...priceLines(stored.items, stored.promoCode), version: stored.version, updatedAt: stored.updatedAt }
+}
+
+/** Validates and normalizes visitor cart lines sent by the browser */
+function readGuestLines(body: Partial<GuestCartRequest> | null): Line[] | null {
+  if (!Array.isArray(body?.items)) return null
+  const lines: Line[] = []
+  for (const item of body.items) {
+    if (!item || typeof item.nftId !== 'string' || typeof item.editionId !== 'string') return null
+    if (!Number.isInteger(item.quantity) || item.quantity < 1) return null
+    lines.push({ nftId: item.nftId, editionId: item.editionId, quantity: item.quantity })
+  }
+  return lines
 }
 
 function versionConflict(userId: string) {
@@ -94,6 +127,67 @@ export function setCartItem(userId: string, nftId: string, editionId: EditionId,
 }
 
 export const cartHandlers = [
+  /**
+   * Visitor cart: the browser keeps the lines; the API computes the values,
+   * so prices, stock and coupon rules are the same as for signed-in users.
+   */
+  http.post(`${API}/cart/preview`, async ({ request }) => {
+    const failure = await simulateNetwork()
+    if (failure) return failure
+
+    const body = await readJson<GuestCartRequest>(request)
+    const lines = readGuestLines(body)
+    if (!lines) return apiError(422, 'validation_error', 'Itens do carrinho inválidos.')
+
+    const promoCode = body?.promoCode?.trim().toUpperCase() || null
+    if (promoCode) {
+      const invalid = promoError(promoCode)
+      if (invalid) return invalid
+    }
+    const cart: Cart = { ...priceLines(lines, promoCode), version: 0, updatedAt: new Date().toISOString() }
+    return HttpResponse.json(cart)
+  }),
+
+  /** Merges the visitor cart into the signed-in user's cart (called right after sign-in) */
+  http.post(`${API}/cart/merge`, async ({ request }) => {
+    const failure = await simulateNetwork()
+    if (failure) return failure
+    const auth = requireUser(request)
+    if (auth.error) return auth.error
+
+    const body = await readJson<GuestCartRequest>(request)
+    const lines = readGuestLines(body)
+    if (!lines) return apiError(422, 'validation_error', 'Itens do carrinho inválidos.')
+
+    const adjustments: string[] = []
+    for (const line of lines) {
+      const nft = getDb().nfts[line.nftId]
+      const edition = findEdition(nft, line.editionId)
+      if (!nft || !edition) continue
+      const existing = getCart(auth.user.id).items.find((i) => i.nftId === line.nftId && i.editionId === line.editionId)
+      const wanted = (existing?.quantity ?? 0) + line.quantity
+      const quantity = Math.min(wanted, edition.available)
+      if (quantity < wanted) {
+        adjustments.push(
+          edition.available === 0
+            ? `${nft.name} (${edition.label}) esgotou e não foi adicionado.`
+            : `${nft.name} (${edition.label}) foi limitado a ${edition.available} cópias.`,
+        )
+      }
+      if (quantity > 0) setCartItem(auth.user.id, line.nftId, line.editionId, quantity)
+    }
+
+    const promoCode = body?.promoCode?.trim().toUpperCase()
+    if (promoCode && !promoError(promoCode)) {
+      const cart = getCart(auth.user.id)
+      cart.promoCode = promoCode
+      touchCart(cart)
+    }
+    commit()
+    const response: MergeCartResponse = { cart: toCart(auth.user.id), adjustments }
+    return HttpResponse.json(response)
+  }),
+
   http.get(`${API}/cart`, async ({ request }) => {
     const failure = await simulateNetwork()
     if (failure) return failure
@@ -157,17 +251,8 @@ export const cartHandlers = [
 
     const body = await readJson<{ code: string }>(request)
     const code = body?.code?.trim().toUpperCase() ?? ''
-    const promo = PROMO_CODES[code]
-    if (!promo) {
-      return apiError(422, 'invalid_promo_code', 'Código promocional inválido.', {
-        code: 'Código promocional inválido.',
-      })
-    }
-    if (promo.expiresAt && Date.parse(promo.expiresAt) < Date.now()) {
-      return apiError(422, 'expired_promo_code', 'Este código promocional expirou.', {
-        code: 'Este código promocional expirou.',
-      })
-    }
+    const invalid = promoError(code)
+    if (invalid) return invalid
 
     const cart = getCart(auth.user.id)
     cart.promoCode = code

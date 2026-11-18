@@ -1,14 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Trash2 } from 'lucide-react'
 import { Breadcrumbs } from '@/components/common/Breadcrumbs'
 import { ErrorState } from '@/components/common/ErrorState'
 import { QuantityStepper } from '@/components/common/QuantityStepper'
 import { NftCard } from '@/components/nft/NftCard'
-import { buttonVariants } from '@/components/ui/button'
-import { useApplyPromo, useCart, useRemoveCartItem, useRemovePromo, useSetCartItem } from '@/features/account/hooks'
-import { RequireAuth } from '@/features/auth/RequireAuth'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { ApiError } from '@/api/client'
+import { useAuth } from '@/features/auth/auth-context'
+import { useCart, useCartActions } from '@/features/cart/useCart'
 import { catalogQueries } from '@/features/catalog/queries'
 import { useNftCardActions } from '@/features/catalog/useNftCardActions'
 import { cn } from '@/lib/utils'
@@ -24,9 +25,8 @@ function CartPage() {
     <div className="container-page mt-6 flex flex-col gap-6 md:mt-8">
       <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Mercado' }, { label: 'Carrinho' }]} />
       <h1 className="sr-only">Carrinho</h1>
-      <RequireAuth message="Entre para ver seu carrinho e finalizar a compra dos seus NFTs.">
-        <CartContent />
-      </RequireAuth>
+      {/* Visitors have a cart too; it is merged into the account on sign-in */}
+      <CartContent />
     </div>
   )
 }
@@ -60,8 +60,7 @@ function CartContent() {
 }
 
 function CartItems({ cart }: { cart: Cart }) {
-  const setItem = useSetCartItem()
-  const removeItem = useRemoveCartItem()
+  const { setItem, removeItem, isGuest } = useCartActions()
   const isUpdating = setItem.isPending || removeItem.isPending
 
   return (
@@ -108,7 +107,13 @@ function CartItems({ cart }: { cart: Cart }) {
                   max={item.available}
                   disabled={isUpdating}
                   onChange={(quantity) =>
-                    setItem.mutate({ nftId: item.nftId, editionId: item.editionId, quantity, expectedVersion: cart.version })
+                    setItem.mutate({
+                      nftId: item.nftId,
+                      editionId: item.editionId,
+                      quantity,
+                      // Detects changes made in another tab (signed-in cart only)
+                      expectedVersion: isGuest ? undefined : cart.version,
+                    })
                   }
                 />
               </td>
@@ -136,12 +141,20 @@ function CartItems({ cart }: { cart: Cart }) {
 
 function CartSummary({ cart }: { cart: Cart }) {
   const [code, setCode] = useState('')
-  const applyPromo = useApplyPromo()
-  const removePromo = useRemovePromo()
+  const { applyPromo, removePromo } = useCartActions()
+  const { user, requireAuth } = useAuth()
+  const navigate = useNavigate()
+  const promoError = applyPromo.error instanceof ApiError ? applyPromo.error.fields?.code : undefined
+  const hasUnavailable = cart.items.some((item) => item.quantity > item.available)
 
   function handlePromo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (code.trim()) applyPromo.mutate(code.trim(), { onSuccess: () => setCode('') })
+  }
+
+  /** Checkout needs an account: visitors sign in first and the cart is merged */
+  function checkout() {
+    requireAuth(() => void navigate({ to: '/pagamento' }))
   }
 
   return (
@@ -166,7 +179,12 @@ function CartSummary({ cart }: { cart: Cart }) {
             <input
               id="promo-code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              aria-invalid={promoError ? true : undefined}
+              aria-describedby={promoError ? 'promo-code-error' : undefined}
+              onChange={(e) => {
+                setCode(e.target.value)
+                applyPromo.reset()
+              }}
               placeholder="Digite o código promocional..."
               className="min-w-0 flex-1 bg-transparent px-3 text-sm text-foreground placeholder:text-brand-secondary focus-visible:-outline-offset-2"
             />
@@ -174,6 +192,11 @@ function CartSummary({ cart }: { cart: Cart }) {
               Aplicar
             </button>
           </div>
+        )}
+        {promoError && (
+          <p id="promo-code-error" className="text-xs text-destructive">
+            {promoError}
+          </p>
         )}
       </form>
 
@@ -187,9 +210,14 @@ function CartSummary({ cart }: { cart: Cart }) {
       </dl>
 
       <div className="flex flex-col gap-3">
-        <Link to="/pagamento" className={cn(buttonVariants({ size: 'brand-lg' }), 'w-full')}>
-          Conectar e finalizar
-        </Link>
+        {hasUnavailable && (
+          <p role="alert" className="text-xs text-destructive">
+            Algum item tem mais cópias do que o estoque atual. Ajuste as quantidades para continuar.
+          </p>
+        )}
+        <Button size="brand-lg" className="w-full" onClick={checkout} disabled={hasUnavailable}>
+          {user ? 'Conectar e finalizar' : 'Entrar e finalizar'}
+        </Button>
         <Link to="/" className="text-center text-sm text-text-accent hover:underline">
           Continuar explorando
         </Link>

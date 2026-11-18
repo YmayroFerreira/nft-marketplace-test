@@ -1,4 +1,4 @@
-import type { Order, Profile, User, Wallet } from '@/types/account'
+import type { CheckoutQuote, Order, Profile, User, Wallet, WalletConnection } from '@/types/account'
 import type { EditionId, NftDetail } from '@/types/catalog'
 import { createSeedNfts } from './fixtures/nfts'
 import type { PasswordHash } from './password'
@@ -13,7 +13,7 @@ import type { PasswordHash } from './password'
  */
 
 /** Bump the version when the stored shape changes, so old data is discarded */
-const STORAGE_KEY = 'kurio.mock.db.v2'
+const STORAGE_KEY = 'kurio.mock.db.v3'
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 
 export interface StoredUser extends User {
@@ -33,6 +33,14 @@ export interface StoredOrder extends Order {
   idempotencyKey: string
 }
 
+export interface StoredQuote extends CheckoutQuote {
+  userId: string
+}
+
+export interface StoredConnection extends WalletConnection {
+  userId: string
+}
+
 export interface MockDb {
   nfts: Record<string, NftDetail>
   users: Record<string, StoredUser>
@@ -42,6 +50,8 @@ export interface MockDb {
   wallets: Record<string, Wallet[]>
   profiles: Record<string, Profile>
   orders: Record<string, StoredOrder>
+  quotes: Record<string, StoredQuote>
+  walletConnections: Record<string, StoredConnection>
   newsletter: string[]
   sequence: number
 }
@@ -129,6 +139,8 @@ function seed(): MockDb {
       },
     },
     orders: {},
+    quotes: {},
+    walletConnections: {},
     newsletter: [],
     sequence: 1000,
   }

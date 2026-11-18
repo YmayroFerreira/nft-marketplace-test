@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { authApi } from '@/api/endpoints'
+import { toast } from 'sonner'
+import { authApi, cartApi } from '@/api/endpoints'
 import { getSessionToken, onSessionTokenChange, setSessionToken } from '@/api/session-token'
 import type { AuthResponse } from '@/types/account'
 import { accountKeys } from '../account/keys'
+import { guestCart } from '../cart/guest-cart'
 import { AuthContext } from './auth-context'
 import type { AuthTab } from './auth-search'
 
@@ -52,9 +54,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const completeSignIn = useCallback(
-    (response: AuthResponse) => {
+    async (response: AuthResponse) => {
       queryClient.setQueryData(accountKeys.session(response.token), response.user)
       setSessionToken(response.token)
+
+      // The visitor cart is moved into the account before anything else
+      const guest = guestCart.get()
+      if (guest.items.length > 0 || guest.promoCode) {
+        try {
+          const result = await cartApi.merge(guest)
+          queryClient.setQueryData(accountKeys.cart(response.user.id), result.cart)
+          guestCart.clear()
+          if (guest.items.length > 0) toast.success('Os itens do seu carrinho foram adicionados à sua conta.')
+          for (const adjustment of result.adjustments) toast.warning(adjustment)
+        } catch {
+          // The visitor cart stays in the browser and can be merged on the next sign-in
+          toast.error('Não foi possível juntar o carrinho de visitante à sua conta. Os itens continuam salvos.')
+        }
+      }
+
       const action = pendingAction.current
       pendingAction.current = null
       // Run after React has the new user, so the action sees the session

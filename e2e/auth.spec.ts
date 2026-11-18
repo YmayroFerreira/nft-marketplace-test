@@ -68,23 +68,26 @@ test.describe('Autenticação', () => {
   })
 
   test('páginas da conta pedem login e "Sair" encerra a sessão', async ({ page }) => {
-    await gotoStable(page, '/carrinho')
-    await expect(page.getByRole('heading', { name: 'Entre na sua conta' })).toBeVisible()
+    for (const path of ['/pagamento', '/perfil', '/carteiras', '/favoritos']) {
+      await gotoStable(page, path)
+      await expect(page.getByRole('heading', { name: 'Entre na sua conta' }), path).toBeVisible()
+    }
 
+    await gotoStable(page, '/pagamento')
     await signIn(page)
-    await expect(page.getByRole('table')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Conectar carteira' })).toBeVisible()
 
     await page.goto('/perfil')
     await page.getByRole('button', { name: 'Sair' }).click()
     await expect(page).toHaveURL(/\/$/)
-    await page.goto('/carrinho')
+    await page.goto('/pagamento')
     await expect(page.getByRole('heading', { name: 'Entre na sua conta' })).toBeVisible()
   })
 
   test('sessão expirada pede login novamente', async ({ page }) => {
-    await gotoStable(page, '/carrinho')
+    await gotoStable(page, '/pagamento')
     await signIn(page)
-    await gotoStable(page, '/carrinho', 'session-expired')
+    await gotoStable(page, '/pagamento', 'session-expired')
     await expect(page.getByRole('heading', { name: 'Entre na sua conta' })).toBeVisible()
   })
 })

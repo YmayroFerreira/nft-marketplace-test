@@ -2,9 +2,8 @@ import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ApiError } from '@/api/client'
-import { cartApi, favoritesApi, ordersApi, profileApi, walletsApi } from '@/api/endpoints'
-import type { Cart, CreateOrderRequest, Favorites, Order } from '@/types/account'
-import type { EditionId } from '@/types/catalog'
+import { favoritesApi, ordersApi, profileApi, walletsApi } from '@/api/endpoints'
+import type { CreateOrderRequest, Favorites, Order } from '@/types/account'
 import { useAuth } from '../auth/auth-context'
 import { accountKeys } from './keys'
 
@@ -18,64 +17,7 @@ function errorMessage(error: unknown) {
   return error instanceof ApiError ? error.message : 'Algo deu errado. Tente novamente.'
 }
 
-// ---------- Cart ----------
-
-export function useCart() {
-  const { userId, enabled } = useUserId()
-  return useQuery({ queryKey: accountKeys.cart(userId), queryFn: cartApi.get, enabled })
-}
-
-/** Cart mutations replace the cached cart with the server's answer */
-function useCartMutation<TVariables>(mutationFn: (variables: TVariables) => Promise<Cart>) {
-  const queryClient = useQueryClient()
-  const { userId } = useUserId()
-  return useMutation({
-    mutationFn,
-    onSuccess: (cart) => queryClient.setQueryData(accountKeys.cart(userId), cart),
-    onError: (error) => {
-      // A version conflict comes with the current cart: show it instead of the stale one
-      if (error instanceof ApiError && error.code === 'cart_conflict') {
-        const body = error.body as { cart?: Cart } | undefined
-        if (body?.cart) queryClient.setQueryData(accountKeys.cart(userId), body.cart)
-      }
-      toast.error(errorMessage(error))
-    },
-  })
-}
-
-export function useSetCartItem() {
-  return useCartMutation((v: { nftId: string; editionId: EditionId; quantity: number; expectedVersion?: number }) =>
-    cartApi.setItem(v.nftId, v.editionId, { quantity: v.quantity, expectedVersion: v.expectedVersion }),
-  )
-}
-
-export function useRemoveCartItem() {
-  return useCartMutation((v: { nftId: string; editionId: EditionId }) => cartApi.removeItem(v.nftId, v.editionId))
-}
-
-export function useApplyPromo() {
-  return useCartMutation((code: string) => cartApi.applyPromo(code))
-}
-
-export function useRemovePromo() {
-  return useCartMutation(() => cartApi.removePromo())
-}
-
-/** Adds copies of an NFT edition on top of what is already in the cart */
-export function useAddToCart() {
-  const queryClient = useQueryClient()
-  const { userId } = useUserId()
-  const setItem = useSetCartItem()
-  return {
-    ...setItem,
-    add: async (nftId: string, editionId: EditionId, name: string, quantity = 1) => {
-      const cart = queryClient.getQueryData<Cart>(accountKeys.cart(userId)) ?? (await cartApi.get())
-      const current = cart.items.find((item) => item.nftId === nftId && item.editionId === editionId)?.quantity ?? 0
-      await setItem.mutateAsync({ nftId, editionId, quantity: current + quantity })
-      toast.success(`${name} adicionado ao carrinho.`)
-    },
-  }
-}
+// Cart hooks live in features/cart/useCart.ts (visitor and signed-in cart)
 
 // ---------- Favorites ----------
 
@@ -205,13 +147,12 @@ export function useCreateOrder() {
   return useMutation({
     mutationFn: ({ body, idempotencyKey }: { body: CreateOrderRequest; idempotencyKey: string }) =>
       ordersApi.create(body, idempotencyKey),
-    onSuccess: (order: Order) => {
-      queryClient.setQueryData(accountKeys.order(userId, order.id), order)
-      // The server empties the cart when the order is created
-      void queryClient.invalidateQueries({ queryKey: accountKeys.cart(userId) })
-    },
+    // The cart is not touched when the order is created; purchased copies leave
+    // it on confirmation (the order page refreshes the cart then)
+    onSuccess: (order: Order) => queryClient.setQueryData(accountKeys.order(userId, order.id), order),
     onError: (error) => {
-      if (error instanceof ApiError && error.code === 'cart_changed') {
+      // Values changed: the cart shown elsewhere must be refreshed too
+      if (error instanceof ApiError && error.code === 'quote_changed') {
         void queryClient.invalidateQueries({ queryKey: accountKeys.cart(userId) })
       }
     },
