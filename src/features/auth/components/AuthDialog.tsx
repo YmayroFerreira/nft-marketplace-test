@@ -93,9 +93,23 @@ export function AuthDialog() {
     <Dialog open={auth !== undefined} onOpenChange={(open) => !open && setTab(undefined)}>
       <DialogContent
         showCloseButton={false}
-        className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto rounded-lg bg-surface-card p-0 pb-12 ring-0 sm:max-w-[500px]"
+        // Mobile frames: full screen page (logo, title, form, link to the other form)
+        className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto rounded-lg bg-surface-card p-0 pb-12 ring-0 sm:max-w-[500px] max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-dvh max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:content-start max-md:rounded-none max-md:bg-ink max-md:pb-10"
       >
-        <DialogTitle className="sr-only">{activeTab.label}</DialogTitle>
+        <p aria-hidden className="pt-20 text-center text-5xl font-bold tracking-[0.08em] text-foreground md:hidden">
+          KURIO
+        </p>
+        {/* Visible title on mobile; on desktop the tabs play this role */}
+        <DialogTitle className="pt-12 text-center text-xl font-bold text-foreground md:sr-only">
+          {activeTab.value === 'criar-conta' ? (
+            <>
+              <span className="md:hidden">Criar perfil de colecionador</span>
+              <span className="hidden md:inline">Criar conta</span>
+            </>
+          ) : (
+            'Entrar'
+          )}
+        </DialogTitle>
 
         <button
           type="button"
@@ -106,8 +120,8 @@ export function AuthDialog() {
           <img src={closeIcon} alt="" width={18} height={18} />
         </button>
 
-        <div className="flex flex-col items-center gap-10 px-6 pt-12 sm:px-12">
-          <div role="tablist" aria-label="Acesso" className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-10 px-6 sm:px-12 md:pt-12">
+          <div role="tablist" aria-label="Acesso" className="hidden items-center gap-2 md:flex">
             {TABS.map((tab, index) => {
               const isActive = tab.value === activeTab.value
               return (
@@ -139,7 +153,7 @@ export function AuthDialog() {
               )
             })}
           </div>
-          <DialogDescription className="text-center text-caption leading-4 text-foreground">
+          <DialogDescription className="text-center text-caption leading-4 text-foreground max-md:sr-only">
             {activeTab.description}
           </DialogDescription>
         </div>
@@ -166,10 +180,22 @@ export function AuthDialog() {
             disabled={isSubmitting}
             onSelect={(provider) => authMutation.mutate({ kind: 'social', provider })}
           />
+          {/* Mobile frames: link to the other form instead of tabs */}
+          <p className="mt-14 text-center text-sm text-text-secondary md:hidden">
+            {activeTab.value === 'entrar' ? (
+              <button type="button" onClick={() => setTab('criar-conta')} className="hover:text-text-accent">
+                Novo na Kurio? Crie uma conta
+              </button>
+            ) : (
+              <button type="button" onClick={() => setTab('entrar')} className="hover:text-text-accent">
+                Já tem uma conta? Entre
+              </button>
+            )}
+          </p>
         </div>
 
-        {/* Accent bar at the bottom of the modal, from the design */}
-        <span aria-hidden className="absolute inset-x-0 bottom-0 h-2.5 bg-primary" />
+        {/* Accent bar at the bottom of the modal, from the desktop design */}
+        <span aria-hidden className="absolute inset-x-0 bottom-0 hidden h-2.5 bg-primary md:block" />
       </DialogContent>
     </Dialog>
   )

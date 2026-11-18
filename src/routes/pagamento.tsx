@@ -4,6 +4,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { FormField } from '@/components/account/FormField'
 import { WalletMark } from '@/components/account/WalletMark'
 import { Breadcrumbs } from '@/components/common/Breadcrumbs'
+import { PageTitleBar } from '@/components/layout/MobilePageHeader'
 import { ErrorState } from '@/components/common/ErrorState'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { ApiError } from '@/api/client'
@@ -30,9 +31,11 @@ const NETWORKS = Object.keys(NETWORK_LABELS) as Network[]
 
 function CheckoutPage() {
   return (
-    <div className="container-page mt-6 flex flex-col gap-6 md:mt-8">
-      <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Carrinho', to: '/carrinho' }, { label: 'Pagamento' }]} />
-      <h1 className="text-2xl font-bold text-foreground">Pagamento com carteira</h1>
+    <div className="container-page mt-4 flex flex-col gap-6 md:mt-8">
+      <div className="hidden md:block">
+        <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Carrinho', to: '/carrinho' }, { label: 'Pagamento' }]} />
+      </div>
+      <PageTitleBar title="Pagamento com carteira" fallback="/carrinho" visibleOnDesktop />
       <RequireAuth message="Entre para escolher sua carteira e confirmar a compra.">
         <CheckoutContent />
       </RequireAuth>
@@ -267,7 +270,7 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
 
         {step === 'details' ? (
           <form noValidate onSubmit={review} className="flex flex-col gap-6">
-            <section aria-labelledby="collector-title" className="flex flex-col gap-4 rounded-lg bg-surface-card p-5">
+            <section aria-labelledby="collector-title" className="flex flex-col gap-4 rounded-2xl bg-surface-card p-5">
               <h2 id="collector-title" className="text-lg font-bold text-foreground">
                 Dados do colecionador
               </h2>
@@ -300,7 +303,7 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
               </div>
             </section>
 
-            <section aria-labelledby="wallet-title" className="flex flex-col gap-4 rounded-lg bg-surface-card p-5">
+            <section aria-labelledby="wallet-title" className="flex flex-col gap-4 rounded-2xl bg-surface-card p-5">
               <div className="flex items-center justify-between gap-4">
                 <h2 id="wallet-title" className="text-lg font-bold text-foreground">
                   Carteira e rede
@@ -325,7 +328,7 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
                       <label
                         key={w.id}
                         className={cn(
-                          'flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-ring',
+                          'flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-ring',
                           w.id === walletId ? 'border-primary' : 'border-border hover:border-border-soft',
                         )}
                       >
@@ -418,14 +421,14 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
               </p>
             )}
 
-            <Button type="submit" size="brand-lg" className="w-full sm:w-fit" disabled={requestQuote.isPending}>
+            <Button type="submit" size="brand-lg" className="max-md:h-[60px] max-md:w-full max-md:rounded-full max-md:bg-[linear-gradient(97deg,#d28a4c_0%,#b5733f_100%)] max-md:text-lg sm:w-fit" disabled={requestQuote.isPending}>
               {requestQuote.isPending ? 'Calculando…' : 'Revisar pedido'}
             </Button>
           </form>
         ) : (
           quote &&
           wallet && (
-            <section aria-labelledby="review-title" className="flex flex-col gap-5 rounded-lg bg-surface-card p-5">
+            <section aria-labelledby="review-title" className="flex flex-col gap-5 rounded-2xl bg-surface-card p-5">
               <h2 id="review-title" className="text-lg font-bold text-foreground">
                 Revise antes de confirmar
               </h2>
@@ -471,7 +474,7 @@ function CheckoutFlow({ cart, wallets, profile }: CheckoutFlowProps) {
               )}
 
               <div className="flex flex-wrap gap-3">
-                <Button size="brand-lg" onClick={confirm} disabled={createOrder.isPending}>
+                <Button size="brand-lg" className="max-md:h-[60px] max-md:w-full max-md:rounded-full max-md:bg-[linear-gradient(97deg,#d28a4c_0%,#b5733f_100%)] max-md:text-lg" onClick={confirm} disabled={createOrder.isPending}>
                   {createOrder.isPending
                     ? 'Confirmando…'
                     : previousTotal
@@ -524,12 +527,12 @@ function QuoteItems({ quote }: { quote: CheckoutQuote }) {
 function OrderSummary({ cart, quote }: { cart: Cart; quote: CheckoutQuote | null }) {
   const values = quote ?? cart
   return (
-    <aside aria-labelledby="order-summary-title" className="flex h-fit flex-col gap-4 rounded-lg bg-surface-card p-6">
+    <aside aria-labelledby="order-summary-title" className="flex h-fit flex-col gap-4 rounded-2xl bg-surface-card p-6">
       <h2 id="order-summary-title" className="text-lg font-bold text-foreground">
         {quote ? 'Valores da cotação' : 'Resumo do pedido'}
       </h2>
       {!quote && (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-3 max-md:hidden">
           {cart.items.map((item) => (
             <li key={`${item.nftId}:${item.editionId}`} className="flex items-center gap-3 text-sm">
               <img src={item.imageUrl} alt="" width={44} height={44} className="size-11 rounded-md object-cover" />

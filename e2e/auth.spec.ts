@@ -32,7 +32,7 @@ test.describe('Autenticação', () => {
   test('validação do formulário foca o primeiro campo inválido', async ({ page }) => {
     await gotoStable(page, '/?auth=criar-conta')
     const dialog = page.getByRole('dialog')
-    await dialog.getByRole('button', { name: 'Criar conta', exact: true }).last().click()
+    await dialog.getByRole('button', { name: /^Criar (conta|perfil)$/ }).click()
     await expect(dialog.getByLabel('Nome de usuário')).toBeFocused()
     await expect(dialog.getByLabel('Nome de usuário')).toHaveAttribute('aria-invalid', 'true')
     await expect(dialog.getByText('O nome de usuário precisa ter ao menos 3 caracteres.')).toBeVisible()
@@ -45,7 +45,7 @@ test.describe('Autenticação', () => {
     await dialog.getByLabel('E-mail').fill('nova@kurio.dev')
     await dialog.getByLabel('Senha', { exact: true }).fill('senha12345')
     await dialog.getByLabel('Confirmar senha').fill('senha12345')
-    await dialog.getByRole('button', { name: 'Criar conta', exact: true }).last().click()
+    await dialog.getByRole('button', { name: /^Criar (conta|perfil)$/ }).click()
     await expect(dialog).toBeHidden()
     await expect(page.getByText('Olá, novacolecionadora!')).toBeVisible()
   })
@@ -62,9 +62,10 @@ test.describe('Autenticação', () => {
     await expect(trigger).toBeFocused()
   })
 
-  test('/cadastro abre o modal na aba "Criar conta"', async ({ page }) => {
+  test('/cadastro abre o formulário de cadastro', async ({ page }) => {
     await page.goto('/cadastro?scenario=stable')
-    await expect(page.getByRole('tab', { name: 'Criar conta' })).toHaveAttribute('aria-selected', 'true')
+    // Desktop shows tabs; the mobile frame shows a full-screen form with its own title
+    await expect(page.getByRole('dialog').getByLabel('Confirmar senha')).toBeVisible()
   })
 
   test('páginas da conta pedem login e "Sair" encerra a sessão', async ({ page }) => {

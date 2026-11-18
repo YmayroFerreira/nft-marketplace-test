@@ -73,7 +73,7 @@ export function SignInForm({ onSubmit, onForgotPassword, isSubmitting = false, s
           Esqueceu a senha?
         </button>
       </div>
-      <Button type="submit" disabled={isSubmitting} className="mt-6 h-[45px] rounded-[5px] text-base font-bold">
+      <Button type="submit" disabled={isSubmitting} className="mt-6 h-[45px] rounded-[5px] text-base font-bold max-md:mt-8 max-md:h-[60px] max-md:rounded-xl max-md:text-lg">
         {isSubmitting ? 'Entrando…' : 'Entrar'}
       </Button>
     </form>

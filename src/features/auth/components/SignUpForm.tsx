@@ -76,8 +76,16 @@ export function SignUpForm({ onSubmit, isSubmitting = false, serverErrors }: Sig
           onChange={(e) => update('confirmPassword', e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={isSubmitting} className="mt-6 h-[45px] rounded-[5px] text-base font-bold">
-        {isSubmitting ? 'Criando conta…' : 'Criar conta'}
+      <Button type="submit" disabled={isSubmitting} className="mt-6 h-[45px] rounded-[5px] text-base font-bold max-md:mt-8 max-md:h-[60px] max-md:rounded-xl max-md:text-lg">
+        {isSubmitting ? (
+          'Criando conta…'
+        ) : (
+          <>
+            {/* Label from each frame: "Criar perfil" (mobile), "Criar conta" (desktop) */}
+            <span className="md:hidden">Criar perfil</span>
+            <span className="hidden md:inline">Criar conta</span>
+          </>
+        )}
       </Button>
     </form>
   )

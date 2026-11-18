@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils'
 import { formatDate, formatEth } from '@/lib/format'
 import heartIcon from '@/assets/icons/heart.svg'
 import zoomIcon from '@/assets/icons/zoom.svg'
+import cartIcon from '@/assets/icons/cart-small.svg'
+import { BackButton } from '@/components/layout/MobilePageHeader'
 import type { EditionId, NftDetail } from '@/types/catalog'
 
 export const Route = createFileRoute('/nft/$nftId')({
@@ -28,8 +30,11 @@ function NftDetailsPage() {
   const nft = useQuery(catalogQueries.detail(nftId))
 
   return (
-    <div className="container-page mt-6 flex flex-col gap-6 md:mt-8">
-      <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Mercado' }, { label: nft.data?.name ?? 'NFT' }]} />
+    // Mobile: bottom padding keeps the content clear of the fixed buy bar
+    <div className="container-page mt-4 flex flex-col gap-6 pb-48 md:mt-8 md:pb-0">
+      <div className="hidden md:block">
+        <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Mercado' }, { label: nft.data?.name ?? 'NFT' }]} />
+      </div>
 
       {nft.isPending ? (
         <DetailsSkeleton />
@@ -79,11 +84,11 @@ function Overview({ nft }: { nft: NftDetail }) {
   const image = nft.gallery[imageIndex] ?? nft.imageUrl
 
   // Buying does not need a session: visitors keep a cart that is merged on sign-in
-  async function buy() {
+  async function buy(goToCart = true) {
     setIsAdding(true)
     try {
       await cartActions.add(nft.id, edition.id, nft.name, safeQuantity)
-      void navigate({ to: '/carrinho' })
+      if (goToCart) void navigate({ to: '/carrinho' })
     } catch {
       // The error toast is shown by the cart actions
     } finally {
@@ -91,11 +96,27 @@ function Overview({ nft }: { nft: NftDetail }) {
     }
   }
 
+  const toggleFavoriteAction = () =>
+    requireAuth(() => toggleFavorite.mutate({ nftId: nft.id, favorite: !isFavorite }))
+
   return (
     <section aria-labelledby="nft-title" className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-12">
       {/* Gallery */}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row">
-        <ul className="flex gap-3 sm:flex-col" aria-label="Imagens">
+      <div className="flex flex-col gap-3 md:flex-row">
+        {/* Mobile frame: back and favorite buttons above the artwork */}
+        <div className="flex items-center justify-between md:hidden">
+          <BackButton fallback="/" />
+          <button
+            type="button"
+            onClick={toggleFavoriteAction}
+            aria-label={isFavorite ? 'Favoritado' : 'Favoritar'}
+            aria-pressed={isFavorite}
+            className={cn('grid size-[35px] place-items-center rounded-full bg-surface-dark', isFavorite && 'ring-2 ring-primary')}
+          >
+            <img src={heartIcon} alt="" width={18} height={18} />
+          </button>
+        </div>
+        <ul className="hidden gap-3 md:flex md:flex-col" aria-label="Imagens">
           {nft.gallery.map((src, index) => (
             <li key={src}>
               <button
@@ -113,34 +134,45 @@ function Overview({ nft }: { nft: NftDetail }) {
             </li>
           ))}
         </ul>
-        <div className="relative flex-1 bg-surface-card p-3 sm:p-4">
+        <div className="relative flex-1 md:bg-surface-card md:p-4">
           <img
             src={image}
             alt={nft.name}
             width={560}
             height={560}
             fetchPriority="high"
-            className="aspect-square w-full rounded-[22px] object-cover"
+            className="aspect-square w-full rounded-3xl object-cover md:rounded-[22px]"
           />
           <a
             href={image}
             target="_blank"
             rel="noreferrer"
             aria-label="Abrir imagem em tamanho original"
-            className="absolute top-5 right-5 grid size-9 place-items-center rounded-full bg-ink/60"
+            className="absolute top-5 right-5 hidden size-9 place-items-center rounded-full bg-ink/60 md:grid"
           >
             <img src={zoomIcon} alt="" width={18} height={18} />
           </a>
         </div>
       </div>
 
-      {/* Info */}
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3 border-b border-border pb-4">
-          <h1 id="nft-title" className="text-2xl font-bold text-foreground">
-            {nft.name}
-          </h1>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Info. Mobile frame: a rounded sheet that overlaps the bottom of the artwork */}
+      <div className="flex flex-col gap-5 max-md:relative max-md:-mx-4 max-md:-mt-16 max-md:rounded-t-[32px] max-md:bg-surface-card max-md:px-6 max-md:pt-8 max-md:pb-6">
+        <div className="flex flex-col gap-3 md:border-b md:border-border md:pb-4">
+          <div className="flex items-center justify-between gap-3">
+            <h1 id="nft-title" className="text-2xl font-bold text-foreground">
+              {nft.name}
+            </h1>
+            <p className="flex shrink-0 items-center gap-1 rounded-full border border-primary px-2.5 py-1 text-sm text-foreground md:hidden">
+              <span aria-hidden className="text-text-accent">
+                ★
+              </span>
+              <span className="sr-only">Nota </span>
+              {nft.rating.average}
+              <span aria-hidden>({nft.rating.count})</span>
+              <span className="sr-only"> de 5, {nft.rating.count} avaliações</span>
+            </p>
+          </div>
+          <div className="hidden flex-wrap items-center justify-between gap-3 md:flex">
             <p className="flex items-center gap-3 text-xl font-bold text-text-accent" aria-live="polite">
               {formatEth(edition.price)}
               {edition.id === nft.defaultEditionId && nft.previousPrice !== undefined && (
@@ -163,8 +195,8 @@ function Overview({ nft }: { nft: NftDetail }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-bold text-foreground">Sobre este NFT:</h2>
-          <p className="text-sm leading-6 text-text-accent">{nft.summary}</p>
+          <h2 className="text-sm font-bold text-foreground max-md:sr-only">Sobre este NFT:</h2>
+          <p className="text-sm leading-6 text-text-secondary md:text-text-accent">{nft.summary}</p>
         </div>
 
         <fieldset className="flex flex-col gap-2">
@@ -208,7 +240,7 @@ function Overview({ nft }: { nft: NftDetail }) {
           </p>
         </fieldset>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="hidden flex-wrap items-center gap-4 md:flex">
           <QuantityStepper
             label={`Quantidade de ${nft.name}`}
             value={safeQuantity}
@@ -217,14 +249,14 @@ function Overview({ nft }: { nft: NftDetail }) {
             disabled={soldOut}
           />
           <div className="flex flex-1 flex-wrap gap-2">
-            <Button size="brand-md" className="min-w-[124px] font-bold uppercase" onClick={buy} disabled={soldOut || isAdding}>
+            <Button size="brand-md" className="min-w-[124px] font-bold uppercase" onClick={() => void buy()} disabled={soldOut || isAdding}>
               {isAdding ? 'Adicionando…' : 'Comprar'}
             </Button>
             <Button
               size="brand-md"
               variant="outline"
               aria-pressed={isFavorite}
-              onClick={() => requireAuth(() => toggleFavorite.mutate({ nftId: nft.id, favorite: !isFavorite }))}
+              onClick={toggleFavoriteAction}
               className={cn('border-primary bg-transparent text-foreground', isFavorite && 'bg-primary/20')}
             >
               <img src={heartIcon} alt="" width={16} height={16} />
@@ -247,6 +279,40 @@ function Overview({ nft }: { nft: NftDetail }) {
             <dd>{nft.attributes.map((a) => a.value).join(', ')}</dd>
           </div>
         </dl>
+
+        {/* Mobile frame: fixed buy bar (quantity, price, buy, add to cart) */}
+        <div className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-4 rounded-t-[32px] border-t border-border bg-surface-card px-6 pt-5 pb-[calc(20px+env(safe-area-inset-bottom))] md:hidden">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-base font-bold text-foreground" aria-hidden>
+                Qtd.
+              </span>
+              <QuantityStepper
+                size="sm"
+                label={`Quantidade de ${nft.name}`}
+                value={safeQuantity}
+                max={Math.max(1, edition.available)}
+                onChange={setQuantity}
+                disabled={soldOut}
+              />
+            </div>
+            <p className="text-2xl font-bold text-text-accent">{formatEth(edition.price)}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="gradient" size="pill" className="flex-1" onClick={() => void buy()} disabled={soldOut || isAdding}>
+              {isAdding ? 'Adicionando…' : soldOut ? 'Indisponível' : 'Comprar NFT'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => void buy(false)}
+              disabled={soldOut || isAdding}
+              aria-label={`Adicionar ${nft.name} ao carrinho`}
+              className="grid size-[60px] shrink-0 place-items-center rounded-full bg-surface-dark disabled:opacity-40"
+            >
+              <img src={cartIcon} alt="" width={20} height={20} />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   )

@@ -61,7 +61,7 @@ test.describe('Regressão visual', () => {
   test('carrinho', async ({ page }) => {
     await gotoStable(page, '/carrinho')
     await signIn(page)
-    await expect(page.getByRole('table')).toBeVisible()
+    await expect(page.getByRole('group', { name: /^Edições de / }).first()).toBeVisible()
     await settle(page)
     await expect(page).toHaveScreenshot('carrinho.png', { fullPage: true })
   })

@@ -93,7 +93,8 @@ test.describe('Compra', () => {
       timeout: 15_000,
     })
     await page.getByRole('link', { name: 'Voltar ao carrinho' }).click()
-    await expect(page.getByRole('table').locator('tbody tr')).toHaveCount(3)
+    // One quantity control per cart line, in the desktop table or the mobile cards
+    await expect(page.getByRole('group', { name: /^Edições de / })).toHaveCount(3)
   })
 
   test('o estoque do NFT diminui ao vivo depois de uma compra (nft.updated)', async ({ page }) => {

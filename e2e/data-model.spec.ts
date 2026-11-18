@@ -6,11 +6,11 @@ test.describe('Edições', () => {
     await gotoStable(page, '/nft/emerald-ape-042')
     // Default edition (1/50) shows the Figma price
     await expect(page.getByText('50 de 50 disponíveis na edição 1/50')).toBeVisible()
-    await expect(page.getByText('1.19 ETH').first()).toBeVisible()
+    await expect(page.getByText('1.19 ETH').filter({ visible: true }).first()).toBeVisible()
 
     // 1/10 costs 1.8× the base price, computed exactly: 1.19 × 1.8 = 2.142
     await page.getByText('1/10', { exact: true }).click()
-    await expect(page.getByText('2.142 ETH')).toBeVisible()
+    await expect(page.getByText('2.142 ETH').filter({ visible: true }).first()).toBeVisible()
     await expect(page.getByText('10 de 10 disponíveis na edição 1/10')).toBeVisible()
 
     // 1/1 of this NFT is sold out in the seed data
@@ -83,7 +83,7 @@ test.describe('Senhas', () => {
     await dialog.getByLabel('E-mail').fill('hash@kurio.dev')
     await dialog.getByLabel('Senha', { exact: true }).fill('SenhaSecreta987')
     await dialog.getByLabel('Confirmar senha').fill('SenhaSecreta987')
-    await dialog.getByRole('button', { name: 'Criar conta', exact: true }).last().click()
+    await dialog.getByRole('button', { name: /^Criar (conta|perfil)$/ }).click()
     await expect(dialog).toBeHidden()
 
     const storage = await page.evaluate(() => JSON.stringify({ ...localStorage }))

@@ -17,6 +17,9 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        /* Kurio mobile primary action: orange gradient pill from the mobile frames */
+        gradient:
+          "bg-[linear-gradient(97deg,#d28a4c_0%,#b5733f_100%)] text-primary-foreground hover:brightness-110",
       },
       size: {
         default:
@@ -34,6 +37,7 @@ const buttonVariants = cva(
         "brand-sm": "h-9 gap-1 rounded-[6px] px-3 text-base font-bold",
         "brand-md": "h-[35px] gap-1 rounded-[6px] px-4 text-base font-medium",
         "brand-lg": "h-10 gap-2 rounded-[6px] px-7 text-base font-bold",
+        pill: "h-[60px] gap-2 rounded-full px-8 text-lg font-bold",
       },
     },
     defaultVariants: {

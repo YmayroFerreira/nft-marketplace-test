@@ -36,7 +36,15 @@ Pendências e decisões para revisar antes da entrega.
 - [x] Bloco 1 — Edições (1/1, 1/10, 1/50, ABERTA) com preço e estoque próprios; edição indisponível; carrinho por NFT + edição; cupom expirado (`LANCAMENTO2025`).
 - [x] Bloco 2 — Carrinho do visitante mesclado no login; revalidar cotação antes de confirmar; dados do colecionador; rede e simulação de conexão/recusa/desconexão de carteira; etapa de revisão; remover do carrinho só o que foi comprado.
 - [x] Bloco 3 — Histórico do navegador nos filtros (push em vez de replace); busca no desktop; editar carteira; retomada após sessão expirar no checkout; link de exploração simulado.
-- [ ] Bloco 4 — Frames mobile (Detalhe, Carrinho, Pagamento, Login, Cadastro).
+- [x] Bloco 4 — Frames mobile (Detalhe, Carrinho, Pagamento, Login, Cadastro), feitos a partir do PNG exportado do Figma (cota do MCP esgotada).
+
+## Desvios dos frames mobile (documentar no `ARCHITECTURE.md`)
+
+- [ ] Pagamento: no frame, "Carteira e rede" lista provedores (WalletConnect/MetaMask/Coinbase); no app a carteira já tem provedor, e a seção escolhe a rede + "Conectar carteira" (simulação exigida pela tarefa). Há também a etapa de revisão, que o frame não mostra.
+- [ ] Login/Cadastro mobile: botão de fechar (X) mantido por acessibilidade; o frame não tem.
+- [ ] Detalhe mobile: abas de detalhes/avaliações e "Mais desta coleção" mantidas abaixo do conteúdo do frame.
+- [ ] Carrinho mobile: rótulo "Total estimado" mantido (frame: "Total"); lixeira em cada card (o frame mostra só um ícone sobreposto).
+- [ ] Barra de navegação inferior escondida em Detalhe, Carrinho e Pagamento (os frames têm barras de ação próprias).
 
 ## Testes
 
